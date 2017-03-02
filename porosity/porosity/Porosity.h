@@ -20,7 +20,7 @@
 #include "VMState.h"
 #include "Contract.h"
 
-#define VERBOSE_LEVEL 5
+#define VERBOSE_LEVEL 1
 
 using namespace std;
 using namespace dev;

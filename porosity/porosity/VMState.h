@@ -102,8 +102,13 @@ public:
 
     void
     setMemoryData(
-        uint16_t _offset,
-        u256 _data
+        uint32_t _offset,
+        StackRegister _data
+    );
+
+    StackRegister *
+    getMemoryData(
+        uint32_t _offset
     );
 
     string
@@ -123,19 +128,21 @@ public:
 
     void
     clear() {
-        m_mem.clear();
+        m_memStorage.clear();
         m_stack.clear();
 
-        m_mem = dev::bytes(MAX_MEMORY_SPACE);
+        // m_memStorage = dev::bytes(MAX_MEMORY_SPACE);
     }
 
+    uint32_t m_eip;
+
+private:
     bytes *m_byteCodeRuntimeRef;
     // uint32_t m_jmpFlag;
 
     vector<StackRegister> m_stack;
     bytes m_data;
-    bytes m_mem;
-    uint32_t m_eip;
+    std::map<uint32_t, StackRegister> m_memStorage;
     u256 m_caller = 0xdeadbeef;
 
     int m_depthLevel = 1;

@@ -4,10 +4,16 @@ using namespace std;
 using namespace dev;
 using namespace dev::eth;
 
+u256 address_mask("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+
 #define TaintStackEntry(x) (m_stack[x].type |= VMState::StackRegisterType::UserInputTainted)
 #define TagStackEntryAsConstant(x) (m_stack[x].type |= VMState::StackRegisterType::Constant)
+#define IsConstant(first) (((first)->type == VMState::StackRegisterType::Constant) || ((first)->type == VMState::StackRegisterType::ConstantComputed))
+
+#define GetStackEntryById(x) m_stack[x]
 #define IsStackEntryTainted(x) (m_stack[x].type & (UserInput | UserInputTainted))
 #define IsStackEntryTypeTainted(type) (type & (UserInput | UserInputTainted))
+#define IsMasking160bitsAddress(x) ((x)->value.compare(address_mask) == 0)
 
 inline void 
 VMState::SwapStackRegisters(
@@ -128,16 +134,20 @@ string
 VMState::getDismangledRegisterName(
     StackRegister *first
 ) {
+    if (!first) return "invalid";
+
     switch (first->type) {
         case UserInput:
         case UserInputTainted:
         case StorageType:
-        case ConstantComputed:
             return first->name;
         break;
+        case RegTypeLabelSha3:
+            return "store[" + first->name + "]";
         case RegTypeFlag:
             // TODO: point to Expresion *
         break;
+        case ConstantComputed:
         case Constant:
         {
             stringstream mod;
@@ -192,7 +202,14 @@ VMState::getExpressionForInstruction(
         }
         case Instruction::NOT:
         {
-            exp = first->name + " = ~" + getDismangledRegisterName(first) + ";";
+            if (!IsConstant(first))
+                exp = first->name + " = ~" + getDismangledRegisterName(first) + ";";
+            break;
+        }
+        case Instruction::AND:
+        {
+            if (!IsConstant(first) && !IsMasking160bitsAddress(first) && !IsMasking160bitsAddress(second))
+                exp = first->name + " &= " + getDismangledRegisterName(second) + ";";
             break;
         }
         case Instruction::ADD:
@@ -206,8 +223,15 @@ VMState::getExpressionForInstruction(
         {
             char *operation[] = { "+", "*", "-", "/", "/", "%%", "%%", "invld", "invld", "**", 0 };
             int index = int(_instr) - int(Instruction::ADD);
-            exp = first->name + " = " + getDismangledRegisterName(first) + " " 
-                + operation[index] + " " + getDismangledRegisterName(second) + ";";
+            /*exp = first->name + " = " + getDismangledRegisterName(first) + " " 
+                + operation[index] + " " + getDismangledRegisterName(second) + ";";*/
+
+#if (VERBOSE_LEVEL >= 6)
+            exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
+#else
+            if (!IsConstant(first))
+                exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
+#endif
             break;
         }
         case Instruction::LT:
@@ -247,9 +271,15 @@ VMState::getExpressionForInstruction(
 
             break;
         }
+        case Instruction::JUMPDEST:
+        {
+            // TODO: If not function header;
+            // exp = "}";
+            break;
+        }
         case Instruction::JUMPI:
         {
-            exp = "if (!" + second->exp.name + ") ";
+            exp = "if (!" + second->exp.name + ") {";
             break;
         }
         case Instruction::ADDMOD:
@@ -264,36 +294,85 @@ VMState::getExpressionForInstruction(
         case Instruction::SSTORE:
         {
             stringstream argname;
+            string var_name;
+
             uint32_t offset = int(first->value);
-            argname << "stor_";
+            argname << "store_";
             argname << std::hex << offset;
 
-            exp = argname.str() + " = " + getDismangledRegisterName(second) + ";";
+            if (first->type == RegTypeLabelSha3)
+                var_name = "store[" + first->name + "]";
+            else
+                var_name = argname.str();
+
+            if ((VERBOSE_LEVEL > 4) || (var_name != getDismangledRegisterName(second)))
+                exp = var_name + " = " + getDismangledRegisterName(second) + ";";
             break;
         }
         case Instruction::MSTORE:
         {
             stringstream argname;
             uint32_t offset = int(first->value);
-            argname << "mem_";
+            argname << "memory[0x";
             argname << std::hex << offset;
+            argname << "]";
 
+#if (VERBOSE_LEVEL >= 6)
             exp = argname.str() + " = " + getDismangledRegisterName(second) + ";";
+#endif
             break;
         }
         case Instruction::SLOAD:
         {
-            /*
+#if (VERBOSE_LEVEL >= 6)
             stringstream argname;
             uint32_t offset = int(first->value);
             argname << "store_";
             argname << std::hex << offset;
-            first->name = argname.str();
 
-            exp = argname.str() + " = " + getDismangledRegisterName(second) + ";";
-            */
+            if (first->type == RegTypeLabelSha3)
+                exp = "store[" + first->name + "]";
+            else
+                exp = argname.str();
+#endif
             break;
         }
+        case Instruction::SHA3:
+        {
+            uint64_t offset = int(first->value);
+            uint64_t size = int(second->value);
+            // stack[0] = sha3(memStorage + offset, size);
+
+#if (VERBOSE_LEVEL >= 6)
+            {
+                //uint64_t offset = (uint64_t)first->value;
+                //uint64_t size = (uint64_t)second->value;
+                exp = "sha3(" + getDismangledRegisterName(getMemoryData(offset)) + ", " + getDismangledRegisterName(second) + ");";
+            }
+#endif
+            break;
+        }
+        case Instruction::LOG0:
+        case Instruction::LOG1:
+        case Instruction::LOG2:
+        case Instruction::LOG3:
+        case Instruction::LOG4:
+        {
+            // Events allow light clients to react on changes efficiently.
+
+            // Sent(msg.sender, receiver, amount);
+            // LOG1(m_stack[0], m_stack[1], m_stack[2])
+
+            exp = "LOG(" + getDismangledRegisterName(getMemoryData(int(first->value))) + ", " + getDismangledRegisterName(getMemoryData(int(second->value)));
+            int itemsToPop = int(_instr) - int(Instruction::LOG0);
+            for (int i = 0; i < itemsToPop; i++) exp += ", " + getDismangledRegisterName(&GetStackEntryById(2 + i));
+            exp += ");";
+
+            break;
+        }
+        case Instruction::STOP:
+            exp = "return;";
+        break;
         case Instruction::RETURN:
             exp = "return " + first->name + ";";
             break;
@@ -399,9 +478,12 @@ VMState::executeInstruction(
             break;
         }
         case Instruction::MSTORE:
-            setMemoryData(int(m_stack[0].value), m_stack[1].value);
+        {
+            uint32_t offset = int(GetStackEntryById(0).value);
+            setMemoryData(offset, GetStackEntryById(1));
             popStack();
             popStack();
+        }
         break;
         case Instruction::SSTORE:
             // TODO:
@@ -414,8 +496,25 @@ VMState::executeInstruction(
             uint32_t offset = int(m_stack[0].value);
             argname << "store_";
             argname << std::hex << offset;
-            m_stack[0].name = argname.str();
-            m_stack[0].type = StorageType;
+
+            if (GetStackEntryById(0).type == RegTypeLabelSha3)
+                GetStackEntryById(0).name = "store[" + GetStackEntryById(0).name + "]";
+            else
+                GetStackEntryById(0).name = argname.str();
+
+            GetStackEntryById(0).type = StorageType;
+            break;
+        }
+        case Instruction::SHA3:
+        {
+            uint64_t offset = (uint64_t)m_stack[0].value;
+            uint64_t size = (uint64_t)m_stack[1].value;
+            // stack[0] = sha3(memStorage + offset, size);
+            popStack();
+            // popStack();
+            //GetStackEntryById(0).value = u256(dev::keccak256(GetStackEntryById(0).value));
+            GetStackEntryById(0) = *getMemoryData(offset);
+            m_stack[0].type = RegTypeLabelSha3;
             break;
         }
         case Instruction::LOG0:
@@ -483,53 +582,52 @@ VMState::executeInstruction(
         break;
         case Instruction::SUB:
             m_stack[0].value = m_stack[0].value - m_stack[1].value;
-            if (IsStackEntryTainted(1)) TaintStackEntry(0);
+            // if (IsStackEntryTainted(1)) TaintStackEntry(0);
             m_stack[1] = m_stack[0];
             popStack();
             break;
         case Instruction::DIV:
             if (!m_stack[1].value) m_stack[0].value = 0;
             else m_stack[0].value = m_stack[0].value / m_stack[1].value;
-            if (IsStackEntryTainted(1)) TaintStackEntry(0);
+            // if (IsStackEntryTainted(1)) TaintStackEntry(0);
             m_stack[1] = m_stack[0];
             popStack();
             break;
         case Instruction::ADD:
             m_stack[0].value = m_stack[0].value + m_stack[1].value;
-            if (IsStackEntryTainted(1)) TaintStackEntry(0);
+            // if (IsStackEntryTainted(1)) TaintStackEntry(0);
             m_stack[1] = m_stack[0];
             popStack();
             break;
         case Instruction::MUL:
             m_stack[0].value = m_stack[0].value * m_stack[1].value;
-            if (IsStackEntryTainted(1)) TaintStackEntry(0);
+            // if (IsStackEntryTainted(1)) TaintStackEntry(0);
             m_stack[1] = m_stack[0];
             popStack();
             break;
         break;
         case Instruction::MOD:
             m_stack[0].value = m_stack[0].value % m_stack[1].value;
-            if (IsStackEntryTainted(1)) TaintStackEntry(0);
+            // if (IsStackEntryTainted(1)) TaintStackEntry(0);
             m_stack[1] = m_stack[0];
             popStack();
             break;
         case Instruction::EXP:
             m_stack[0].value = porosity::exp256(m_stack[0].value, m_stack[1].value);
-            if (IsStackEntryTainted(1)) TaintStackEntry(0);
-            m_stack[0].type = ConstantComputed;
+            // if (IsStackEntryTainted(1)) TaintStackEntry(0);
+            // if (IsConstant(&GetStackEntryById(0))) GetStackEntryById(0).type = ConstantComputed;
             m_stack[1] = m_stack[0];
             popStack();
             break;
         case Instruction::AND:
         {
-            u256 address_mask("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-            m_stack[0].value = m_stack[0].value & m_stack[1].value;
-            if (m_stack[0].value.compare(address_mask))
-            {
-                // mask for address.
+            if (IsMasking160bitsAddress(&GetStackEntryById(0))) {
+                // mask for address. type discovery.
                 m_stack[0].type = m_stack[1].type; // copy mask to result.
                 m_stack[0].name = m_stack[1].name;
             }
+
+            m_stack[0].value = m_stack[0].value & m_stack[1].value;
             // if (IsStackEntryTainted(1)) TaintStackEntry(0);
             m_stack[1] = m_stack[0];
             popStack(); // info.ret
@@ -628,17 +726,6 @@ VMState::executeInstruction(
         case Instruction::RETURN:
             return false;
         break;
-        case Instruction::SHA3:
-        {
-            uint64_t offset = (uint64_t)m_stack[2].value;
-            uint64_t size = (uint64_t)m_stack[1].value;
-            // stack[0] = sha3(memStorage + offset, size);
-            popStack();
-            // popStack();
-            m_stack[0].value = u256(dev::keccak256("OKLM"));
-            m_stack[0].type = RegTypeLabelSha3;
-            break;
-        }
         case Instruction::PC:
         {
             stringstream argname;
@@ -652,6 +739,7 @@ VMState::executeInstruction(
         }
         case Instruction::CALLER:
         {
+            // this can send actions, check if in between brackets.
             u256 data = _data;
             StackRegister reg = { "", RegTypeLabelCaller, 0, 0 };
             reg.value = m_caller;
@@ -693,17 +781,32 @@ VMState::setData(
 
 void
 VMState::setMemoryData(
-    uint16_t _offset,
-    u256 _data
+    uint32_t _offset,
+    StackRegister _data
 ) {
-    u256 data = _data;
-    u256 arg = 0;
-    /*
-    for (int i = 0; i < 32; ++i) {
-        uint8_t dataByte = int(data & 0xFF);
-        data >>= 8;
-        m_mem[_offset + i] |= dataByte;
-    }*/
+    auto it = m_memStorage.find(_offset);
+
+    if (it == m_memStorage.end()) {
+        m_memStorage.insert(m_memStorage.end(), pair<uint32_t, StackRegister>(_offset, _data));
+    }
+    else {
+#if VERBOSE_LEVEL > 6
+        printf("overwritting memory entry.\n");
+#endif
+        it->second = _data;
+    }
+
+}
+
+VMState::StackRegister *
+VMState::getMemoryData(
+    uint32_t _offset
+) {
+    auto it = m_memStorage.find(_offset);
+
+    if (it != m_memStorage.end()) return &it->second;
+
+    return 0;
 }
 
 void

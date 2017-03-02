@@ -37,7 +37,7 @@ Contract::getBasicBlocks(
 {
     if (m_byteCodeRuntime.empty()) return;
 
-    BasicBlockInfo emptyBlockInfo = { 0,{ 0, RegularNode }, 0, "" };
+    BasicBlockInfo emptyBlockInfo;
 
     m_instructions.clear();
     m_listbasicBlockInfo.clear();
@@ -166,7 +166,10 @@ Contract::getBasicBlocks(
                         addBlockReference((uint32_t)jmpDest, basicBlockOffset, false, RegularNode);
                     }
                     else {
-                        addBlockReference(int(NODE_DEADEND), basicBlockOffset, false, ExitNode);
+                        u256 data = prev->data;
+                        uint32_t exitBlock = int(data);
+                        // addBlockReference(int(NODE_DEADEND), basicBlockOffset, false, ExitNode);
+                        addBlockReference(exitBlock, basicBlockOffset, false, ExitNode);
                     }
                 }
                 if (VERBOSE_LEVEL >= 1) printf("%s: branch @ 0x%08X\n", __FUNCTION__, basicBlockOffset);
@@ -174,6 +177,29 @@ Contract::getBasicBlocks(
             }
         }
     }
+
+    //
+    // Reconnect to exit node.
+    //
+    for (auto func = m_listbasicBlockInfo.begin(); func != m_listbasicBlockInfo.end(); ++func) {
+        auto refs = func->second.references;
+        if (!func->second.fnAddrHash) continue;
+        Xref exitNode;
+        bool exitNodeFound = false;
+        for (auto ref = refs.begin(); ref != refs.end(); ++ref) {
+            if (ref->second.conditional == ExitNode) {
+                exitNode = ref->second;
+                exitNodeFound = true;
+            }
+        }
+
+        if (!exitNodeFound) continue;
+
+        //
+        // GetLastNode
+        //
+    }
+
     return;
 }
 
@@ -202,12 +228,9 @@ Contract::addBlockReference(
 {
    auto it = m_listbasicBlockInfo.find(_dest);
    if (it != m_listbasicBlockInfo.end()) {
-       uint32_t numrefs = it->second.numrefs;
-       Xref ref;
-       ref.offset = _src;
-       ref.conditional = _conditional;
-       it->second.references[numrefs] = ref;
-       it->second.numrefs++;
+       Xref ref = { _src, _conditional };
+
+       it->second.references.insert(it->second.references.begin(), pair<uint32_t, Xref>(_src, ref));
        it->second.fnAddrHash = _fnAddrHash;
        return true;
    }
@@ -243,9 +266,10 @@ Contract::printBlockReferences(
 {
     // DEBUG
     for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
-        printf("(dest = 0x%08X, numrefs = 0x%08X, refs = {", it->first, it->second.numrefs);
-        for (uint32_t i = 0; i < it->second.numrefs; i++) {
-            printf("0x%08x", it->second.references[i].offset);
+        auto refs = it->second.references;
+        printf("(dest = 0x%08X, numrefs = 0x%08X, refs = {", it->first, refs.size());
+        for (auto ref = refs.begin(); ref != refs.end(); ++ref) {
+            printf("0x%08x", ref->second.offset);
         }
         printf("}");
         if (it->second.fnAddrHash) {
@@ -280,15 +304,19 @@ Contract::getGraphviz(
     // DEBUG
 #if 1
     for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
-        printf("(dest = 0x%08X, numrefs = 0x%08X, refs = {", it->first, it->second.numrefs);
-        for (uint32_t i = 0; i < it->second.numrefs; i++) {
-            printf("0x%08x ", it->second.references[i].offset);
+        auto refs = it->second.references;
+        printf("(dest = 0x%08X, numrefs = 0x%08X, refs = {", it->first, refs.size());
+
+        for (auto ref = refs.begin(); ref != refs.end(); ++ref) {
+            printf("0x%08x ", ref->second.offset);
         }
+
         printf("}");
         if (it->second.fnAddrHash) {
             printf(", hash = 0x%08X, ", it->second.fnAddrHash);
             printf("str = %s, ", getFunctionName(it->second.fnAddrHash).c_str());
         }
+
         printf(")");
         printf("\n");
     }
@@ -302,10 +330,13 @@ Contract::getGraphviz(
     graph += "node[shape = square];\n";
 
     for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
-        if (it->second.numrefs) {
-            for (uint32_t i = 0; i < it->second.numrefs; i++) {
-                uint32_t offset_str = it->second.references[i].offset;
-                NodeType nodeType = it->second.references[i].conditional;
+
+        auto refs = it->second.references;
+
+        if (refs.size()) {
+            for (auto ref = refs.begin(); ref != refs.end(); ++ref) {
+                uint32_t offset_str = ref->second.offset;
+                NodeType nodeType = ref->second.conditional;
                 uint32_t offset_dst = it->first;
                 graph += "    ";
                 if (!it->second.fnAddrHash) {
@@ -321,8 +352,7 @@ Contract::getGraphviz(
                 }
                 graph += "\n";
             }
-        }
-        else {
+        } else {
             graph += "    ";
             graph += "\"" + porosity::to_hstring(int(NODE_DEADEND)) + "\"" + " -> " + "\"" + porosity::to_hstring(it->first) + "\"" + "[label = \""  + +it->second.name.c_str() + "\"";
             graph += " color=black fillcolor = lightgray";
@@ -445,5 +475,14 @@ Contract::getFunction(
 
     printf("}\n\n");
 
-    m_vmState.displayStack();
+    if (VERBOSE_LEVEL > 1) m_vmState.displayStack();
+}
+
+void
+Contract::forEachFunction(
+    function<void(uint32_t)> const& _onFunction
+) {
+    for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
+        if (it->second.fnAddrHash) _onFunction(it->second.fnAddrHash);
+    }
 }

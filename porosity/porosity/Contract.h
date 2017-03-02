@@ -23,8 +23,7 @@ typedef struct _Xref {
 typedef struct _BasicBlockInfo
 {
     uint32_t fnAddrHash;
-    Xref references[MAX_XREFS];
-    uint32_t numrefs;
+    std::map<uint32_t, Xref>  references;
     string name;
 } BasicBlockInfo;
 
@@ -107,6 +106,11 @@ public:
     uint32_t
     getFunctionOffset(
         uint32_t hash
+    );
+
+    void
+    forEachFunction(
+        function<void(uint32_t)> const& _onFunction
     );
 
     void
