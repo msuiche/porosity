@@ -149,7 +149,7 @@ Contract::getBasicBlocks(
 
                         addBlockReference((uint32_t)jmpDest, basicBlockOffset, fnAddrHash, ConditionalNode);
                     }
-                    if (g_VerboseLevel >= 1) printf("%s: function @ 0x%08X (hash = 0x%08x)\n",
+                    if (g_VerboseLevel >= 3) printf("%s: function @ 0x%08X (hash = 0x%08x)\n",
                         __FUNCTION__, basicBlockOffset, fnAddrHash);
                 }
                 break;
@@ -168,11 +168,11 @@ Contract::getBasicBlocks(
                     else {
                         u256 data = prev->data;
                         uint32_t exitBlock = int(data);
-                        // addBlockReference(int(NODE_DEADEND), basicBlockOffset, false, ExitNode);
-                        addBlockReference(exitBlock, basicBlockOffset, false, ExitNode);
+                        addBlockReference(int(NODE_DEADEND), basicBlockOffset, false, ExitNode);
+                        // addBlockReference(exitBlock, basicBlockOffset, false, ExitNode);
                     }
                 }
-                if (g_VerboseLevel >= 1) printf("%s: branch @ 0x%08X\n", __FUNCTION__, basicBlockOffset);
+                if (g_VerboseLevel >= 3) printf("%s: branch @ 0x%08X\n", __FUNCTION__, basicBlockOffset);
                 break;
             }
         }
@@ -302,25 +302,7 @@ Contract::getGraphviz(
 )
 {
     // DEBUG
-#if 1
-    for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
-        auto refs = it->second.references;
-        printf("(dest = 0x%08X, numrefs = 0x%08X, refs = {", it->first, refs.size());
-
-        for (auto ref = refs.begin(); ref != refs.end(); ++ref) {
-            printf("0x%08x ", ref->second.offset);
-        }
-
-        printf("}");
-        if (it->second.fnAddrHash) {
-            printf(", hash = 0x%08X, ", it->second.fnAddrHash);
-            printf("str = %s, ", getFunctionName(it->second.fnAddrHash).c_str());
-        }
-
-        printf(")");
-        printf("\n");
-    }
-#endif
+    if (g_VerboseLevel >= 4) printBlockReferences();
 
     string graph;
 
@@ -367,37 +349,46 @@ Contract::getGraphviz(
 
 void
 Contract::setABI(
-    string abiFile,
-    string abi
+    string _abiFile,
+    string _abi
 ) {
-    if (abiFile.empty() && abi.empty()) return;
+    string abi;
+
+    if (_abiFile.empty() && !_abi.empty()) {
+        abi = _abi;
+    }
+    else if (!_abiFile.empty() && _abi.empty()) {
+        ifstream file(_abiFile);
+        stringstream s;
+        if (!file.is_open()) {
+            printf("%s: Can't open file.\n", __FUNCTION__);
+            return;
+        }
+        s << file.rdbuf();
+        file.close();
+        abi = s.str();
+    }
+    else {
+        return;
+    }
 
     m_publicFunctions.clear();
 
-    pt::ptree root;
-    if (!abiFile.empty()) {
-        pt::read_json(abiFile, root);
-    }
-    else {
-        stringstream ss;
-        ss.clear();
-        ss << abi;
-        pt::read_json(ss, root);
-    }
-    m_abi_json = root;
+    m_abi_json = nlohmann::json::parse(abi.c_str());
 
-    for (pt::ptree::value_type &entry : root) {
+    for (nlohmann::json entry : m_abi_json) {
         string name = "";
-        assert(entry.first.empty()); // array elements have no names
-        string entry_name = entry.second.get_value<string>("name");
-        string entry_type = entry.second.get_value<string>("type");
+        string entry_type = entry["type"];
+        if (entry_type != "function") continue;
+        string entry_name = entry["name"];
         name += entry_name;
         name += "(";
 
         std::vector<string> parameters;
 
-        for (pt::ptree::value_type &input : entry.second.get_child("inputs"))
-            parameters.push_back(input.second.data());
+        for (nlohmann::json input : entry["inputs"]) {
+            parameters.push_back(input["type"]);
+        }
 
         for (size_t i = 0; i < parameters.size(); i += 1) {
             name += parameters[i];
@@ -411,7 +402,7 @@ Contract::setABI(
         uint32_t hashMethod;
 
         dev::FixedHash<4> hash(dev::keccak256(abiMethod));
-        hashMethod = uint32_t(hash.data());
+        hashMethod = (hash[0] << 24) | (hash[1] << 16) | (hash[2] << 8) | hash[3];
 
         FunctionDef def;
         if (entry_type == "function") {
@@ -508,8 +499,9 @@ Contract::printFunctions(
 {
     for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
         if (it->second.fnAddrHash) {
-            printf("[+] Hash: 0x%08X (%s) (%d references)\n", it->second.fnAddrHash, it->second.name.c_str(), it->second.references.size());
-            getFunction(it->second.fnAddrHash);
+            auto func = m_publicFunctions.find(it->second.fnAddrHash);
+            printf("[+] Hash: 0x%08X (%s) (%d references)\n", it->second.fnAddrHash, func->second.name.c_str(), it->second.references.size());
+            // getFunction(it->second.fnAddrHash);
         }
     }
 }

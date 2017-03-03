@@ -10,6 +10,8 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/version.hpp>
 
+#include "json/json.hpp"
+
 #include "Common.h"
 #include "CommonData.h"
 #include "Assert.h"
@@ -30,6 +32,7 @@ namespace pt = boost::property_tree;
 #define VERBOSE_LEVEL 1
 
 extern uint32_t g_VerboseLevel; // VERBOSE_LEVEL
+extern bool g_SingleStepping;
 
 using namespace std;
 using namespace dev;

@@ -187,17 +187,14 @@ VMState::getExpressionForInstruction(
     switch (_instr) {
         case Instruction::CALLDATALOAD:
         {
-#if 0
-            stringstream argname;
-            uint32_t offset = int(first->value);
-            argname << "arg_";
-            argname << std::hex << offset;
+            if (g_VerboseLevel >= 6) {
+                stringstream argname;
+                uint32_t offset = int(first->value);
+                argname << "arg_";
+                argname << std::hex << offset;
 
-            exp << first->name.c_str();
-            exp << " = ";
-            exp << argname.str().c_str();
-            exp << ";";
-#endif
+                exp = first->name + " = " + argname.str() + ";";
+            }
             break;
         }
         case Instruction::NOT:
@@ -223,15 +220,16 @@ VMState::getExpressionForInstruction(
         {
             char *operation[] = { "+", "*", "-", "/", "/", "%%", "%%", "invld", "invld", "**", 0 };
             int index = int(_instr) - int(Instruction::ADD);
-            /*exp = first->name + " = " + getDismangledRegisterName(first) + " " 
+            /*exp = first->name + " = " + getDismangledRegisterName(first) + " "
                 + operation[index] + " " + getDismangledRegisterName(second) + ";";*/
 
-#if (g_VerboseLevel >= 6)
-            exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
-#else
-            if (!IsConstant(first))
+            if (g_VerboseLevel >= 6) {
                 exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
-#endif
+            }
+            else {
+                if (!IsConstant(first))
+                    exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
+            }
             break;
         }
         case Instruction::LT:
@@ -251,7 +249,12 @@ VMState::getExpressionForInstruction(
             first->exp.name = exp;
             first->exp.instr = _instr;
 
-            exp = "";
+            if (g_VerboseLevel >= 6) {
+                exp = first->exp.name;
+            }
+            else {
+                exp = "";
+            }
             break;
         }
         case Instruction::ISZERO:
@@ -267,7 +270,12 @@ VMState::getExpressionForInstruction(
             exp = "(!(" + cond + "))";
 
             first->exp.name = exp;
-            exp = "";
+            if (g_VerboseLevel >= 6) {
+                exp = first->exp.name;
+            }
+            else {
+                exp = "";
+            }
 
             break;
         }
@@ -836,21 +844,21 @@ VMState::executeByteCode(
         }
 
 
-        if (g_VerboseLevel >= 3) {
+        if (g_SingleStepping) {
             printf("=================\n");
             printf("BEFORE:\n");
             displayStack();
         }
-        if (g_VerboseLevel >= 2) porosity::printInstruction(offset, instr, data);
+        if (g_SingleStepping || (g_VerboseLevel >= 2)) porosity::printInstruction(offset, instr, data);
         Expression exp = getCurrentExpression(instr);
         if (exp.name.size()) printf("%s\n", exp.name.c_str());
         bool ret = executeInstruction(offset, instr, data);
-        if (g_VerboseLevel >= 3) {
+        if (g_SingleStepping) {
             printf("AFTER:\n");
             displayStack();
             printf("=================\n");
         }
-        if (g_VerboseLevel >= 6) getchar();
+        if (g_SingleStepping) getchar();
         if (!ret || (m_eip == m_byteCodeRuntimeRef->size())) break;
     }
 }

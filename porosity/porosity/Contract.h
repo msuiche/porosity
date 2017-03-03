@@ -155,7 +155,7 @@ private:
 
     VMState m_vmState;
 
-    pt::ptree m_abi_json;
+    nlohmann::json m_abi_json;
     bytes m_byteCode;
     bytes m_byteCodeRuntime;
 };
