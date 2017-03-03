@@ -367,41 +367,55 @@ Contract::getGraphviz(
 
 void
 Contract::setABI(
+    string abiFile,
     string abi
 ) {
+    if (abiFile.empty() && abi.empty()) return;
 
     m_publicFunctions.clear();
 
-    m_abi_json = nlohmann::json::parse(abi.c_str());
-    string dmp = m_abi_json.dump();
+    pt::ptree root;
+    if (!abiFile.empty()) {
+        pt::read_json(abiFile, root);
+    }
+    else {
+        stringstream ss;
+        ss.clear();
+        ss << abi;
+        pt::read_json(ss, root);
+    }
+    m_abi_json = root;
 
-    int maxMethods = m_abi_json.size();
-    for (int i = 0; i < maxMethods; i += 1) {
-        stringstream name;
-        name.clear();
-        name << m_abi_json[i]["name"];
-        name << "(";
-        int maxInputs = m_abi_json[i]["inputs"].size();
-        for (int j = 0; j < maxInputs; j += 1) {
-            name << m_abi_json[i]["inputs"][j]["type"];
-            if ((j + 1) < maxInputs) name << ",";
+    for (pt::ptree::value_type &entry : root) {
+        string name = "";
+        assert(entry.first.empty()); // array elements have no names
+        string entry_name = entry.second.get_value<string>("name");
+        string entry_type = entry.second.get_value<string>("type");
+        name += entry_name;
+        name += "(";
+
+        std::vector<string> parameters;
+
+        for (pt::ptree::value_type &input : entry.second.get_child("inputs"))
+            parameters.push_back(input.second.data());
+
+        for (size_t i = 0; i < parameters.size(); i += 1) {
+            name += parameters[i];
+            if ((i + 1) < parameters.size()) name += ",";
         }
-        name << ")";
+        name += ")";
 
-        string abiMethod = name.str();
+        string abiMethod = name;
         abiMethod.erase(std::remove(abiMethod.begin(), abiMethod.end(), '"'), abiMethod.end());
         if (g_VerboseLevel >= 5) printf("%s: Name: %s\n", __FUNCTION__, abiMethod.c_str());
         uint32_t hashMethod;
 
         dev::FixedHash<4> hash(dev::keccak256(abiMethod));
-#ifdef _WIN32
-        sscanf_s(hash.hex().c_str(), "%x", &hashMethod);
-#else
-        sscanf(hash.hex().c_str(), "%x", &hashMethod);
-#endif
+        hashMethod = uint32_t(hash.data());
+
         FunctionDef def;
-        if (m_abi_json[i]["type"] == "function") {
-            string abiMethodName = m_abi_json[i]["name"];
+        if (entry_type == "function") {
+            string abiMethodName = entry_name;
             abiMethodName.erase(std::remove(abiMethodName.begin(), abiMethodName.end(), '"'), abiMethodName.end());
             def.name = abiMethodName;
             def.abiName = abiMethod;

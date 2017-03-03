@@ -25,7 +25,9 @@ typedef struct _Arguments {
     bytes codeByte;
     bytes codeByteRuntime;
     bytes arguments;
+
     string abiMethod;
+    string abiMethodFile;
 
     uint32_t targetHashMethod;
     uint32_t method;
@@ -52,6 +54,9 @@ parse(
         }
         else if ((keyword == "--abi") && ((i + 1) < argc)) {
             out->abiMethod = argv[++i];
+        }
+        else if ((keyword == "--abi-file") && ((i + 1) < argc)) {
+            out->abiMethodFile = argv[++i];
         }
         else if ((keyword == "--hash") && ((i + 1) < argc)) {
             sscanf_s(argv[i], "%x", &out->targetHashMethod);
@@ -143,7 +148,7 @@ int main(
     }
 
     Contract contract(args.codeByteRuntime);
-    contract.setABI(args.abiMethod);
+    contract.setABI(args.abiMethodFile, args.abiMethod);
     contract.setData(args.arguments);
 
     if (args.method & MethodListFunctions) {

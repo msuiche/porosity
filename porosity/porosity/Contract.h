@@ -90,6 +90,7 @@ public:
 
     void
     setABI(
+        string abiFile,
         string abi
     );
 
@@ -154,7 +155,7 @@ private:
 
     VMState m_vmState;
 
-    nlohmann::json m_abi_json;
+    pt::ptree m_abi_json;
     bytes m_byteCode;
     bytes m_byteCodeRuntime;
 };
