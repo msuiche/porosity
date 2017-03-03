@@ -1,3 +1,19 @@
+/*++
+
+Copyright (c) 2017, Matthieu Suiche
+
+Module Name:
+    Utils.cpp
+
+Abstract:
+    Porosity.
+
+Author:
+    Matthieu Suiche (m) Feb-2017
+
+Revision History:
+
+--*/
 #include "Porosity.h"
 
 namespace porosity {
@@ -15,6 +31,7 @@ namespace porosity {
         }
         return result;
     }
+
     string to_hstring(uint32_t i)
     {
         stringstream stream;

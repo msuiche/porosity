@@ -1,3 +1,20 @@
+/*++
+
+Copyright (c) 2017, Matthieu Suiche
+
+Module Name:
+    Contract.cpp
+
+Abstract:
+    Porosity.
+
+Author:
+    Matthieu Suiche (m) Feb-2017
+
+Revision History:
+
+--*/
+
 #include "Porosity.h"
 
 using namespace std;

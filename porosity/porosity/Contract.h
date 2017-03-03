@@ -1,3 +1,19 @@
+/*++
+
+Copyright (c) 2017, Matthieu Suiche
+
+Module Name:
+    Contract.h
+
+Abstract:
+    Porosity.
+
+Author:
+    Matthieu Suiche (m) Feb-2017
+
+Revision History:
+
+--*/
 #ifndef _CONTRACT_H_
 #define _CONTRACT_H_
 

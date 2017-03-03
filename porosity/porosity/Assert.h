@@ -1,3 +1,19 @@
+/*++
+
+Copyright (c) 2017, Matthieu Suiche
+
+Module Name:
+    Assert.h
+
+Abstract:
+    Porosity.
+
+Author:
+    Matthieu Suiche (m) Feb-2017
+
+Revision History:
+
+--*/
 #ifndef _ASSERT_H_
 #define _ASSERT_H_
 

@@ -1,3 +1,19 @@
+/*++
+
+Copyright (c) 2017, Matthieu Suiche
+
+Module Name:
+    Porosity.h
+
+Abstract:
+    Porosity.
+
+Author:
+    Matthieu Suiche (m) Feb-2017
+
+Revision History:
+
+--*/
 #include <stdlib.h>
 #include <stdint.h>
 #include <sstream>

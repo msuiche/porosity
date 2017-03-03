@@ -1,3 +1,19 @@
+/*++
+
+Copyright (c) 2017, Matthieu Suiche
+
+Module Name:
+    VMState.h
+
+Abstract:
+    Porosity.
+
+Author:
+    Matthieu Suiche (m) Feb-2017
+
+Revision History:
+
+--*/
 #ifndef _VMSTATE_H_
 #define _VMSTATE_H_
 
