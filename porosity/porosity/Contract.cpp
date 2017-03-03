@@ -457,6 +457,7 @@ uint32_t
 Contract::getFunctionOffset(
     uint32_t hash
 ) {
+
     for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
         if (it->second.fnAddrHash == hash) {
             return it->first;
@@ -481,15 +482,20 @@ Contract::getFunction(
 
     m_vmState.clear();
 
-    auto it = m_publicFunctions.find(hash);
     uint32_t offset = getFunctionOffset(hash);
-
-    if ((it == m_publicFunctions.end()) || (!offset)) {
-        printf("ERROR: Hash not found.\n");
+    if (!offset) {
+        printf("%s: Can't retrieve function offset.\n", __FUNCTION__);
         return;
     }
 
-    string fullName = it->second.abiName;
+    string fullName = "";
+    auto it = m_publicFunctions.find(hash);
+    if (it != m_publicFunctions.end()) {
+        fullName = it->second.abiName;
+    }
+    else {
+        fullName = "func_" + porosity::to_hstring(offset);
+    }
     printf("\nfunction %s {\n", fullName.c_str());
 
     m_vmState.m_eip = offset;
@@ -517,7 +523,9 @@ Contract::printFunctions(
     for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
         if (it->second.fnAddrHash) {
             auto func = m_publicFunctions.find(it->second.fnAddrHash);
-            printf("[+] Hash: 0x%08X (%s) (%d references)\n", it->second.fnAddrHash, func->second.name.c_str(), it->second.references.size());
+            string name = "";
+            if (func != m_publicFunctions.end()) name = func->second.name;
+            printf("[+] Hash: 0x%08X (%s) (%d references)\n", it->second.fnAddrHash, name.c_str(), it->second.references.size());
             // getFunction(it->second.fnAddrHash);
         }
     }
