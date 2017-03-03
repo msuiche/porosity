@@ -37,7 +37,7 @@ Contract::getBasicBlocks(
 {
     if (m_byteCodeRuntime.empty()) return;
 
-    BasicBlockInfo emptyBlockInfo;
+    BasicBlockInfo emptyBlockInfo = { 0 };
 
     m_instructions.clear();
     m_listbasicBlockInfo.clear();
@@ -149,7 +149,7 @@ Contract::getBasicBlocks(
 
                         addBlockReference((uint32_t)jmpDest, basicBlockOffset, fnAddrHash, ConditionalNode);
                     }
-                    if (VERBOSE_LEVEL >= 1) printf("%s: function @ 0x%08X (hash = 0x%08x)\n",
+                    if (g_VerboseLevel >= 1) printf("%s: function @ 0x%08X (hash = 0x%08x)\n",
                         __FUNCTION__, basicBlockOffset, fnAddrHash);
                 }
                 break;
@@ -172,7 +172,7 @@ Contract::getBasicBlocks(
                         addBlockReference(exitBlock, basicBlockOffset, false, ExitNode);
                     }
                 }
-                if (VERBOSE_LEVEL >= 1) printf("%s: branch @ 0x%08X\n", __FUNCTION__, basicBlockOffset);
+                if (g_VerboseLevel >= 1) printf("%s: branch @ 0x%08X\n", __FUNCTION__, basicBlockOffset);
                 break;
             }
         }
@@ -369,10 +369,10 @@ void
 Contract::setABI(
     string abi
 ) {
-    m_abi_json = nlohmann::json::parse(abi);
 
     m_publicFunctions.clear();
 
+    m_abi_json = nlohmann::json::parse(abi.c_str());
     string dmp = m_abi_json.dump();
 
     int maxMethods = m_abi_json.size();
@@ -390,7 +390,7 @@ Contract::setABI(
 
         string abiMethod = name.str();
         abiMethod.erase(std::remove(abiMethod.begin(), abiMethod.end(), '"'), abiMethod.end());
-        if (VERBOSE_LEVEL >= 5) printf("%s: Name: %s\n", __FUNCTION__, abiMethod.c_str());
+        if (g_VerboseLevel >= 5) printf("%s: Name: %s\n", __FUNCTION__, abiMethod.c_str());
         uint32_t hashMethod;
 
         dev::FixedHash<4> hash(dev::keccak256(abiMethod));
@@ -407,7 +407,7 @@ Contract::setABI(
             def.abiName = abiMethod;
             m_publicFunctions.insert(m_publicFunctions.begin(), pair<uint32_t, FunctionDef>(hashMethod, def));
         }
-        if (VERBOSE_LEVEL >= 5) printf("%s: signature: 0x%08x\n", __FUNCTION__, hashMethod);
+        if (g_VerboseLevel >= 5) printf("%s: signature: 0x%08x\n", __FUNCTION__, hashMethod);
     }
 }
 
@@ -475,7 +475,7 @@ Contract::getFunction(
 
     printf("}\n\n");
 
-    if (VERBOSE_LEVEL > 1) m_vmState.displayStack();
+    if (g_VerboseLevel > 1) m_vmState.displayStack();
 }
 
 void
@@ -484,5 +484,18 @@ Contract::forEachFunction(
 ) {
     for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
         if (it->second.fnAddrHash) _onFunction(it->second.fnAddrHash);
+    }
+}
+
+void
+Contract::printFunctions(
+    void
+)
+{
+    for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
+        if (it->second.fnAddrHash) {
+            printf("[+] Hash: 0x%08X (%s) (%d references)\n", it->second.fnAddrHash, it->second.name.c_str(), it->second.references.size());
+            getFunction(it->second.fnAddrHash);
+        }
     }
 }

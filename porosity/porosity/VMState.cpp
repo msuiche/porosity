@@ -123,8 +123,8 @@ VMState::getCurrentExpression(
     }
 
     if (exp.name.size()) {
-        if (VERBOSE_LEVEL >= 3) printf("%s: ", __FUNCTION__);
-        if (VERBOSE_LEVEL >= 2) printf("%s\n", exp.name.c_str());
+        if (g_VerboseLevel >= 3) printf("%s: ", __FUNCTION__);
+        if (g_VerboseLevel >= 2) printf("%s\n", exp.name.c_str());
     }
 
     return exp;
@@ -167,7 +167,7 @@ VMState::getDismangledRegisterName(
         break;
     }
 
-    if (VERBOSE_LEVEL >= 5) printf("%s: unsupported type (type = 0x%x).\n", __FUNCTION__, first->type);
+    if (g_VerboseLevel >= 5) printf("%s: unsupported type (type = 0x%x).\n", __FUNCTION__, first->type);
     return first->name;
 }
 
@@ -226,7 +226,7 @@ VMState::getExpressionForInstruction(
             /*exp = first->name + " = " + getDismangledRegisterName(first) + " " 
                 + operation[index] + " " + getDismangledRegisterName(second) + ";";*/
 
-#if (VERBOSE_LEVEL >= 6)
+#if (g_VerboseLevel >= 6)
             exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
 #else
             if (!IsConstant(first))
@@ -305,7 +305,7 @@ VMState::getExpressionForInstruction(
             else
                 var_name = argname.str();
 
-            if ((VERBOSE_LEVEL > 4) || (var_name != getDismangledRegisterName(second)))
+            if ((g_VerboseLevel > 4) || (var_name != getDismangledRegisterName(second)))
                 exp = var_name + " = " + getDismangledRegisterName(second) + ";";
             break;
         }
@@ -317,14 +317,14 @@ VMState::getExpressionForInstruction(
             argname << std::hex << offset;
             argname << "]";
 
-#if (VERBOSE_LEVEL >= 6)
+#if (g_VerboseLevel >= 6)
             exp = argname.str() + " = " + getDismangledRegisterName(second) + ";";
 #endif
             break;
         }
         case Instruction::SLOAD:
         {
-#if (VERBOSE_LEVEL >= 6)
+#if (g_VerboseLevel >= 6)
             stringstream argname;
             uint32_t offset = int(first->value);
             argname << "store_";
@@ -343,7 +343,7 @@ VMState::getExpressionForInstruction(
             uint64_t size = int(second->value);
             // stack[0] = sha3(memStorage + offset, size);
 
-#if (VERBOSE_LEVEL >= 6)
+#if (g_VerboseLevel >= 6)
             {
                 //uint64_t offset = (uint64_t)first->value;
                 //uint64_t size = (uint64_t)second->value;
@@ -683,7 +683,7 @@ VMState::executeInstruction(
             popStack();
 
             if (cond) {
-                if (VERBOSE_LEVEL > 4) printf("**** FORK BEGIN****\n");
+                if (g_VerboseLevel > 4) printf("**** FORK BEGIN****\n");
                 // We force the opposite condition for discovery.
                 // requires additional coverage.
                 VMState state = *this;
@@ -693,12 +693,12 @@ VMState::executeInstruction(
                 state.executeByteCode(&subBlock);
 
                 // Resume execution.
-                if (VERBOSE_LEVEL > 4) printf("**** FORK END****\n");
+                if (g_VerboseLevel > 4) printf("**** FORK END****\n");
                 m_eip = jmpTarget;
                 return true;
             }
             else {
-                if (VERBOSE_LEVEL > 4) printf("**** FORK BEGIN****\n");
+                if (g_VerboseLevel > 4) printf("**** FORK BEGIN****\n");
                 // We force the opposite condition for discovery.
                 // requires additional coverage.
                 VMState state = *this;
@@ -708,7 +708,7 @@ VMState::executeInstruction(
                 state.executeByteCode(&subBlock);
 
                 // resume execution.
-                if (VERBOSE_LEVEL > 4) printf("**** FORK END****\n");
+                if (g_VerboseLevel > 4) printf("**** FORK END****\n");
                 m_eip = nextInstr;
                 return true;
             }
@@ -764,7 +764,7 @@ VMState::executeInstruction(
             break;
     }
 
-    // if (VERBOSE_LEVEL >= 4) displayStack();
+    // if (g_VerboseLevel >= 4) displayStack();
 
     m_eip += sizeof(Instruction) + info.additional;
 
@@ -790,7 +790,7 @@ VMState::setMemoryData(
         m_memStorage.insert(m_memStorage.end(), pair<uint32_t, StackRegister>(_offset, _data));
     }
     else {
-#if VERBOSE_LEVEL > 6
+#if g_VerboseLevel > 6
         printf("overwritting memory entry.\n");
 #endif
         it->second = _data;
@@ -836,21 +836,21 @@ VMState::executeByteCode(
         }
 
 
-        if (VERBOSE_LEVEL >= 3) {
+        if (g_VerboseLevel >= 3) {
             printf("=================\n");
             printf("BEFORE:\n");
             displayStack();
         }
-        if (VERBOSE_LEVEL >= 2) porosity::printInstruction(offset, instr, data);
+        if (g_VerboseLevel >= 2) porosity::printInstruction(offset, instr, data);
         Expression exp = getCurrentExpression(instr);
         if (exp.name.size()) printf("%s\n", exp.name.c_str());
         bool ret = executeInstruction(offset, instr, data);
-        if (VERBOSE_LEVEL >= 3) {
+        if (g_VerboseLevel >= 3) {
             printf("AFTER:\n");
             displayStack();
             printf("=================\n");
         }
-        if (VERBOSE_LEVEL >= 6) getchar();
+        if (g_VerboseLevel >= 6) getchar();
         if (!ret || (m_eip == m_byteCodeRuntimeRef->size())) break;
     }
 }

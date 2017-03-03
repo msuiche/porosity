@@ -142,6 +142,11 @@ public:
         void
     );
 
+    void
+    printFunctions(
+            void
+    );
+
 private:
     std::map<uint32_t, BasicBlockInfo> m_listbasicBlockInfo;
     std::map<uint32_t, FunctionDef> m_publicFunctions;

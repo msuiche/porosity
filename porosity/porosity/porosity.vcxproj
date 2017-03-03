@@ -142,7 +142,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CommonData.cpp" />
     <ClCompile Include="Contract.cpp" />
+    <ClCompile Include="Debug.cpp" />
     <ClCompile Include="Instruction.cpp" />
     <ClCompile Include="Porosity.cpp" />
     <ClCompile Include="SHA3.cpp" />
@@ -155,6 +157,7 @@
     <ClInclude Include="Common.h" />
     <ClInclude Include="CommonData.h" />
     <ClInclude Include="Contract.h" />
+    <ClInclude Include="Debug.h" />
     <ClInclude Include="Disassm.h" />
     <ClInclude Include="FixedHash.h" />
     <ClInclude Include="Instruction.h" />
