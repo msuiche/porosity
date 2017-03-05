@@ -32,7 +32,7 @@ namespace porosity {
             << std::setfill('0') << std::setw(sizeof(_offset) * 2)
             << std::hex << _offset;
 
-        stream << " | ";
+        stream << " ";
         // printf("0x%08X: ", _offset);
 
         InstructionInfo info = dev::eth::instructionInfo(_instr);

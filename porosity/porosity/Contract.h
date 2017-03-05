@@ -184,7 +184,7 @@ public:
 
     string
     getGraphviz(
-        void
+        uint32_t _flag
     );
 
     void

@@ -34,7 +34,8 @@ typedef enum _Method {
     MethodDecompile = (1 << 2),
     MethodDisassm = (1 << 3),
     MethodSingleStepping = (1 << 4),
-    MethodControlFlowGraph = (1 << 5)
+    MethodControlFlowGraph = (1 << 5),
+    MethodControlFlowGraphFull = (1 << 6),
 } Method;
 
 typedef struct _Arguments {
@@ -83,7 +84,7 @@ parse(
         else if ((keyword == "--list")) {
             out->method |= MethodListFunctions;
         }
-        else if ((keyword == "--runtime-code") && ((i + 1) < argc)) {
+        else if (((keyword == "--runtime-code") || (keyword == "--code")) && ((i + 1) < argc)) {
             out->codeByteRuntime = fromHex(argv[++i]);
         }
         else if ((keyword == "--code") && ((i + 1) < argc)) {
@@ -101,6 +102,9 @@ parse(
         }
         else if ((keyword == "--cfg")) {
             out->method |= MethodControlFlowGraph;
+        }
+        else if ((keyword == "--cfg-full")) {
+            out->method |= MethodControlFlowGraphFull;
         }
         else if ((keyword == "--arguments") && ((i + 1) < argc)) {
             out->arguments = fromHex(argv[++i]);
@@ -143,6 +147,7 @@ help() {
     printf("    --disassm                           - Disassemble the bytecode.\n");
     printf("    --single-step                       - Execute the byte code through our VM.\n");
     printf("    --cfg                               - Generate a the control flow graph in Graphviz format.\n");
+    printf("    --cfg-full                          - Generate a the control flow graph in Graphviz format (including instructions)\n");
     printf("    --decompile                         - Decompile a given function or all the bytecode.\n");
 
     printf("\n");
@@ -168,11 +173,20 @@ int main(
         return true;
     }
 
-    if (!(args.method & MethodControlFlowGraph)) header();
-
     Contract contract(args.codeByteRuntime);
     contract.setABI(args.abiMethodFile, args.abiMethod);
-    contract.setData(args.arguments);
+    contract.setData(args.arguments);   
+
+    if (args.method & MethodControlFlowGraph) {
+        printf("%s\n", contract.getGraphviz(false).c_str());
+        return true;
+    }
+    else if (args.method & MethodControlFlowGraphFull) {
+        printf("%s\n", contract.getGraphviz(true).c_str());
+        return true;
+    }
+
+    header();
 
     if (args.method & MethodListFunctions) {
         contract.printFunctions();
@@ -187,9 +201,6 @@ int main(
                 contract.getFunction(_hash);
             }
         });
-    }
-    else if (args.method & MethodControlFlowGraph) {
-        printf("%s\n", contract.getGraphviz().c_str());
     }
 
     return true;

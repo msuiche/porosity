@@ -354,12 +354,12 @@ Contract::resolveBranchName(
     auto it = m_listbasicBlockInfo.find(offset);
     if (it != m_listbasicBlockInfo.end()) {
         if (it->second.fnAddrHash) {
-            stream << getFunctionName(it->second.fnAddrHash) << "size: " << getBlockSize(offset);
+            stream << getFunctionName(it->second.fnAddrHash);
         }
         else {
             stream << "loc_"
                 << std::setfill('0') << std::setw(sizeof(uint32_t) * 2);
-            stream << std::hex << offset << "size: " << getBlockSize(offset);
+            stream << std::hex << offset;
         }
     }
 
@@ -431,7 +431,7 @@ Contract::getGraphNodeColor(
 
 string
 Contract::getGraphviz(
-    void
+    uint32_t _flag
 )
 {
     // DEBUG
@@ -458,7 +458,12 @@ Contract::getGraphviz(
         uint32_t basicBlockSize = it->second.size;
 
         bytes subBlockCode(m_byteCodeRuntime.begin() + source, m_byteCodeRuntime.begin() + source + basicBlockSize);
-        string basicBlockCode = porosity::buildNode(subBlockCode, source);
+
+        string basicBlockCode;
+        if (_flag)
+            basicBlockCode = porosity::buildNode(subBlockCode, source);
+        else
+            basicBlockCode = symbolName;
 
         graph += "    \"" + source_str + "\"" "[label = \"" + basicBlockCode + "\"];\n";
         if (dstDefault) {
