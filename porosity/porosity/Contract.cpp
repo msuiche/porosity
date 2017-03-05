@@ -59,8 +59,13 @@ Contract::getBasicBlocks(
     m_instructions.clear();
     m_listbasicBlockInfo.clear();
 
+    // Exitnode
     m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(NODE_DEADEND, emptyBlockInfo));
 
+    // Entrypoint
+    m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(0, emptyBlockInfo));
+
+    // Collect all the basic blocks.
     dev::eth::eachInstruction(m_byteCodeRuntime, [&](uint32_t _offset, Instruction _instr, u256 const& _data) {
 
         //
@@ -113,6 +118,8 @@ Contract::getBasicBlocks(
                         uint32_t jmpDest = int(data);
                         //
                         // addBlockReference((uint32_t)jmpDest, basicBlockOffset, false, ExitNode);
+                        // tagBasicBlockWithHashtag(jmpDest, it->second.fnAddrHash);
+                        m_exitNodesByHash.insert(m_exitNodesByHash.begin(), pair<uint32_t, uint32_t>(it->second.fnAddrHash, jmpDest));
                     }
                 }
                 else if (instIndex > 0) {
@@ -169,6 +176,19 @@ Contract::getBasicBlocks(
                     if (g_VerboseLevel >= 3) printf("%s: function @ 0x%08X (hash = 0x%08x)\n",
                         __FUNCTION__, basicBlockOffset, fnAddrHash);
                 }
+
+                if ((instIndex + 1) < m_instructions.size()) {
+                    OffsetInfo *next = &m_instructions[instIndex + 1];
+                    // next basic block.
+                    uint32_t prevBasicBlockOffset = basicBlockOffset;
+                    basicBlockOffset = next->offset;
+                    if (next->inst != Instruction::JUMPDEST) {
+                        // We need to add this new basic block.
+                        // printf("JUMPDEST: 0x%08X\n", _offset);
+                        m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(next->offset, emptyBlockInfo));
+                    }
+                    addBlockReference(next->offset, prevBasicBlockOffset, 0, RegularNode);
+                }
                 break;
             }
             case Instruction::JUMP:
@@ -196,28 +216,44 @@ Contract::getBasicBlocks(
     }
 
     //
-    // Reconnect to exit node.
+    // Reconnect to exit nodes.
     //
     for (auto func = m_listbasicBlockInfo.begin(); func != m_listbasicBlockInfo.end(); ++func) {
         auto refs = func->second.references;
-        if (!func->second.fnAddrHash) continue;
-        Xref exitNode;
-        bool exitNodeFound = false;
-        for (auto ref = refs.begin(); ref != refs.end(); ++ref) {
-            if (ref->second.conditional == ExitNode) {
-                exitNode = ref->second;
-                exitNodeFound = true;
-            }
-        }
+        uint32_t hash = func->second.fnAddrHash;
+        if (!hash) continue;
 
-        if (!exitNodeFound) continue;
-
-        //
-        // GetLastNode
-        //
+        walkAndConnectNodes(hash, func->first);
     }
 
+    m_listbasicBlockInfo.erase(m_listbasicBlockInfo.find(NODE_DEADEND));
+
     return;
+}
+
+void
+Contract::walkAndConnectNodes(
+    uint32_t _hash,
+    uint32_t _block
+)
+{
+    //
+    uint32_t next = _block;
+    while (true) {
+        auto block = m_listbasicBlockInfo.find(next);
+        next = block->second.dstDefault;
+
+        if (block->second.dstJUMPI) {
+            walkAndConnectNodes(_hash, block->second.dstJUMPI);
+        }
+
+        if (!next) break;
+        if (next == NODE_DEADEND) {
+            auto exitNode = m_exitNodesByHash.find(_hash);
+            block->second.dstDefault = exitNode->second;
+            break; // next
+        }
+    }
 }
 
 bool
@@ -236,23 +272,54 @@ Contract::tagBasicBlock(
 }
 
 bool
-Contract::addBlockReference(
+Contract::tagBasicBlockWithHashtag(
     uint32_t _dest,
+    uint32_t _hash
+)
+{
+    auto it = m_listbasicBlockInfo.find(_dest);
+    if (it != m_listbasicBlockInfo.end()) {
+        it->second.hashtag = _hash;
+        return true;
+    }
+
+    return false;
+}
+
+bool
+Contract::addBlockReference(
+    uint32_t _block,
     uint32_t _src,
     uint32_t _fnAddrHash,
     NodeType _conditional
 )
 {
-   auto it = m_listbasicBlockInfo.find(_dest);
+    bool srcRefAdded = false;
+    bool dstRefAdded = false;
+
+    //
+    // Add references/source.
+    //
+   auto it = m_listbasicBlockInfo.find(_block);
    if (it != m_listbasicBlockInfo.end()) {
        Xref ref = { _src, _conditional };
 
        it->second.references.insert(it->second.references.begin(), pair<uint32_t, Xref>(_src, ref));
        it->second.fnAddrHash = _fnAddrHash;
-       return true;
+       srcRefAdded = true;
    }
 
-   return false;
+   //
+   // Add destination
+   //
+   it = m_listbasicBlockInfo.find(_src);
+   if (it != m_listbasicBlockInfo.end()) {
+       if (_conditional == NodeType::ConditionalNode) it->second.dstJUMPI = _block;
+       else it->second.dstDefault = _block;
+       dstRefAdded = true;
+   }
+
+   return (dstRefAdded && srcRefAdded);
 }
 
 string
@@ -329,7 +396,23 @@ Contract::getGraphviz(
     graph += "node[shape = square];\n";
 
     for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
-
+        uint32_t source = it->first;
+        string source_str = porosity::to_hstring(source);
+        uint32_t dstIfTrue = it->second.dstJUMPI;
+        string ifTrue_str = porosity::to_hstring(dstIfTrue);
+        uint32_t dstDefault = it->second.dstDefault;
+        string dstDefault_str = porosity::to_hstring(dstDefault);
+        uint32_t symbolHash = it->second.fnAddrHash;
+        string symbolName = symbolHash ? getFunctionName(symbolHash) : "loc_" + porosity::to_hstring(source);
+        string defaultColor = dstIfTrue ? "red" : "black";
+        graph += "    \"" + source_str + "\"" "[label = \"" + symbolName + "\"];\n";
+        if (dstDefault) {
+            graph += "    \"" + source_str + "\"" + " -> " + "\"" + dstDefault_str + "\"" + " [color=\""+ defaultColor +"\"];\n";
+        }
+        if (dstIfTrue) {
+            graph += "    \"" + source_str + "\"" + " -> " + "\"" + ifTrue_str + "\"" + " [color=\"green\"];\n";
+        }
+#if 0
         auto refs = it->second.references;
 
         if (refs.size()) {
@@ -358,6 +441,7 @@ Contract::getGraphviz(
             graph += "]; ";
             graph += "\n";
         }
+#endif
     }
 
     graph += "}\n";

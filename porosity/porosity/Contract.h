@@ -38,8 +38,11 @@ typedef struct _Xref {
 
 typedef struct _BasicBlockInfo
 {
-    uint32_t fnAddrHash;
-    std::map<uint32_t, Xref>  references;
+    uint32_t fnAddrHash; // Head
+    std::map<uint32_t, Xref> references; // map<uint32_t, NodeType>
+    uint32_t dstDefault;
+    uint32_t dstJUMPI;
+    uint32_t hashtag;
     string name;
 } BasicBlockInfo;
 
@@ -82,7 +85,7 @@ public:
 
     bool
     addBlockReference(
-        uint32_t _dest,
+        uint32_t _block,
         uint32_t _src,
         uint32_t _fnAddrHash,
         NodeType _conditional
@@ -92,6 +95,18 @@ public:
     tagBasicBlock(
         uint32_t dest,
         string name
+    );
+
+    void
+    walkAndConnectNodes(
+        uint32_t _hash,
+        uint32_t _block
+    );
+
+    bool
+    tagBasicBlockWithHashtag(
+        uint32_t dest,
+        uint32_t hash
     );
 
     void
@@ -165,6 +180,8 @@ public:
     );
 
 private:
+
+    map<uint32_t, uint32_t> m_exitNodesByHash;
     std::map<uint32_t, BasicBlockInfo> m_listbasicBlockInfo;
     std::map<uint32_t, FunctionDef> m_publicFunctions;
     std::vector<OffsetInfo> m_instructions;
