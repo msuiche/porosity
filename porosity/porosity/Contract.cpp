@@ -104,9 +104,15 @@ Contract::getBasicBlocks(
             {
                 uint32_t prevBasicBlockOffset = basicBlockOffset;
                 basicBlockOffset = currentOffset;
+                uint32_t basicBlockSize = basicBlockOffset - prevBasicBlockOffset;
 
                 auto it = m_listbasicBlockInfo.find(currentOffset);
-                bool isPublicFunction = ((it != m_listbasicBlockInfo.end()) && (it->second.fnAddrHash));
+                bool isPublicFunction = false;
+
+                if (it != m_listbasicBlockInfo.end()) {
+                    isPublicFunction = (it->second.fnAddrHash != 0);
+                    it->second.size = basicBlockSize;
+                }
 
                 if (isPublicFunction && ((instIndex + 1) < m_instructions.size())) {
                     // The "RETURN" basic block address is pushed at the beginning of functions.
@@ -185,7 +191,9 @@ Contract::getBasicBlocks(
                     if (next->inst != Instruction::JUMPDEST) {
                         // We need to add this new basic block.
                         // printf("JUMPDEST: 0x%08X\n", _offset);
-                        m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(next->offset, emptyBlockInfo));
+                        auto newBlock = m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(next->offset, emptyBlockInfo));
+                        uint32_t basicBlockSize = basicBlockOffset - prevBasicBlockOffset;
+                        newBlock->second.size = basicBlockSize;
                     }
                     addBlockReference(next->offset, prevBasicBlockOffset, 0, RegularNode);
                 }

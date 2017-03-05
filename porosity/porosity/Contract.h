@@ -43,6 +43,7 @@ typedef struct _BasicBlockInfo
     uint32_t dstDefault;
     uint32_t dstJUMPI;
     uint32_t hashtag;
+    uint32_t size;
     string name;
 } BasicBlockInfo;
 
