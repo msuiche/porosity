@@ -32,14 +32,13 @@ Revision History:
 #include "CommonData.h"
 #include "Assert.h"
 
-
+using namespace std;
 namespace pt = boost::property_tree;
-
-#include "Utils.h"
 
 #include "SHA3.h"
 #include "Instruction.h"
 #include "Disassm.h"
+#include "Utils.h"
 #include "VMState.h"
 #include "Contract.h"
 
@@ -50,6 +49,5 @@ namespace pt = boost::property_tree;
 extern uint32_t g_VerboseLevel; // VERBOSE_LEVEL
 extern bool g_SingleStepping;
 
-using namespace std;
 using namespace dev;
 using namespace dev::eth;

@@ -88,6 +88,7 @@ public:
     addBlockReference(
         uint32_t _block,
         uint32_t _src,
+        uint32_t _blockSize,
         uint32_t _fnAddrHash,
         NodeType _conditional
     );
@@ -139,6 +140,17 @@ public:
     uint32_t
     getFunctionOffset(
         uint32_t hash
+    );
+
+    uint32_t
+    getBlockSize(
+        uint32_t offset
+    );
+
+    void
+    setBlockSize(
+        uint32_t _offset,
+        uint32_t _size
     );
 
     void

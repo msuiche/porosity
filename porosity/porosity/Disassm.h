@@ -20,12 +20,24 @@ Revision History:
 
 namespace porosity {
 
-    void
-        printInstruction(
-            uint32_t _offset,
-            dev::eth::Instruction _instr,
-            dev::u256 const& _data
-        );
+    string
+    getInstruction(
+        uint32_t _offset,
+        dev::eth::Instruction _instr,
+        dev::u256 const& _data
+    );
 
+    void
+    printInstruction(
+        uint32_t _offset,
+        dev::eth::Instruction _instr,
+        dev::u256 const& _data
+    );
+
+    string
+    buildNode(
+        dev::bytes const& _mem,
+        uint32_t offset
+    );
 }
 #endif

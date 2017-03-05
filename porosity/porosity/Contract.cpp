@@ -97,6 +97,18 @@ Contract::getBasicBlocks(
     for (uint32_t instIndex = 0; instIndex < m_instructions.size(); instIndex++) {
         OffsetInfo *currentOffInfo = &m_instructions[instIndex];
         uint32_t currentOffset = currentOffInfo->offset;
+
+        uint32_t currentEndOffset;
+        if ((instIndex + 1) < m_instructions.size()) {
+            OffsetInfo *next = &m_instructions[instIndex + 1];
+            currentEndOffset = next->offset;
+        }
+        else {
+            currentEndOffset = m_byteCodeRuntime.size();
+        }
+        uint32_t currentBlockSize = currentOffset - basicBlockOffset;
+        uint32_t nextInstrBlockSize = currentEndOffset - basicBlockOffset;
+
         // basicBlockOffset offCurrent->offset;
 
         switch (currentOffInfo->inst) {
@@ -104,14 +116,14 @@ Contract::getBasicBlocks(
             {
                 uint32_t prevBasicBlockOffset = basicBlockOffset;
                 basicBlockOffset = currentOffset;
-                uint32_t basicBlockSize = basicBlockOffset - prevBasicBlockOffset;
+                // uint32_t currentBlockSize = basicBlockOffset - prevBasicBlockOffset;
 
                 auto it = m_listbasicBlockInfo.find(currentOffset);
+                // it->second.size = currentBlockSize;
                 bool isPublicFunction = false;
 
                 if (it != m_listbasicBlockInfo.end()) {
                     isPublicFunction = (it->second.fnAddrHash != 0);
-                    it->second.size = basicBlockSize;
                 }
 
                 if (isPublicFunction && ((instIndex + 1) < m_instructions.size())) {
@@ -142,7 +154,7 @@ Contract::getBasicBlocks(
                         (prev->inst != Instruction::JUMPC) &&
                         (prev->inst != Instruction::JUMPCI)) {
                         // some gap created due to optmization to fill.
-                        addBlockReference((uint32_t)basicBlockOffset, prevBasicBlockOffset, false, RegularNode);
+                        addBlockReference((uint32_t)basicBlockOffset, prevBasicBlockOffset, currentBlockSize, false, RegularNode);
                     }
                 }
                 break;
@@ -150,11 +162,13 @@ Contract::getBasicBlocks(
             case Instruction::STOP:
             {
                 tagBasicBlock(basicBlockOffset, "STOP");
+                setBlockSize(basicBlockOffset, nextInstrBlockSize);
                 break;
             }
             case Instruction::RETURN:
             {
                 tagBasicBlock(basicBlockOffset, "RETURN");
+                setBlockSize(basicBlockOffset, nextInstrBlockSize);
                 break;
             }
             case Instruction::JUMPI:
@@ -177,7 +191,7 @@ Contract::getBasicBlocks(
                             }
                         }
 
-                        addBlockReference((uint32_t)jmpDest, basicBlockOffset, fnAddrHash, ConditionalNode);
+                        addBlockReference((uint32_t)jmpDest, basicBlockOffset, nextInstrBlockSize, fnAddrHash, ConditionalNode);
                     }
                     if (g_VerboseLevel >= 3) printf("%s: function @ 0x%08X (hash = 0x%08x)\n",
                         __FUNCTION__, basicBlockOffset, fnAddrHash);
@@ -192,10 +206,9 @@ Contract::getBasicBlocks(
                         // We need to add this new basic block.
                         // printf("JUMPDEST: 0x%08X\n", _offset);
                         auto newBlock = m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(next->offset, emptyBlockInfo));
-                        uint32_t basicBlockSize = basicBlockOffset - prevBasicBlockOffset;
-                        newBlock->second.size = basicBlockSize;
+                        newBlock->second.size = nextInstrBlockSize;
                     }
-                    addBlockReference(next->offset, prevBasicBlockOffset, 0, RegularNode);
+                    addBlockReference(next->offset, prevBasicBlockOffset, nextInstrBlockSize, false, RegularNode);
                 }
                 break;
             }
@@ -208,12 +221,12 @@ Contract::getBasicBlocks(
                         (prev->inst == Instruction::PUSH2)) {
                         u256 data = prev->data;
                         uint32_t jmpDest = int(data);
-                        addBlockReference((uint32_t)jmpDest, basicBlockOffset, false, RegularNode);
+                        addBlockReference((uint32_t)jmpDest, basicBlockOffset, nextInstrBlockSize, false, RegularNode);
                     }
                     else {
                         u256 data = prev->data;
                         uint32_t exitBlock = int(data);
-                        addBlockReference(int(NODE_DEADEND), basicBlockOffset, false, ExitNode);
+                        addBlockReference(int(NODE_DEADEND), basicBlockOffset, nextInstrBlockSize, false, ExitNode);
                         // addBlockReference(exitBlock, basicBlockOffset, false, ExitNode);
                     }
                 }
@@ -298,6 +311,7 @@ bool
 Contract::addBlockReference(
     uint32_t _block,
     uint32_t _src,
+    uint32_t _blockSize,
     uint32_t _fnAddrHash,
     NodeType _conditional
 )
@@ -324,6 +338,7 @@ Contract::addBlockReference(
    if (it != m_listbasicBlockInfo.end()) {
        if (_conditional == NodeType::ConditionalNode) it->second.dstJUMPI = _block;
        else it->second.dstDefault = _block;
+       it->second.size = _blockSize;
        dstRefAdded = true;
    }
 
@@ -339,16 +354,42 @@ Contract::resolveBranchName(
     auto it = m_listbasicBlockInfo.find(offset);
     if (it != m_listbasicBlockInfo.end()) {
         if (it->second.fnAddrHash) {
-            stream << getFunctionName(it->second.fnAddrHash);
+            stream << getFunctionName(it->second.fnAddrHash) << "size: " << getBlockSize(offset);
         }
         else {
             stream << "loc_"
                 << std::setfill('0') << std::setw(sizeof(uint32_t) * 2);
-            stream << std::hex << offset;
+            stream << std::hex << offset << "size: " << getBlockSize(offset);
         }
     }
 
     return stream.str();
+}
+
+uint32_t
+Contract::getBlockSize(
+    uint32_t offset
+) {
+    auto it = m_listbasicBlockInfo.find(offset);
+    if (it != m_listbasicBlockInfo.end()) {
+        return it->second.size;
+    }
+
+    return 0;
+}
+
+
+void
+Contract::setBlockSize(
+    uint32_t _offset,
+    uint32_t _size
+) {
+    auto it = m_listbasicBlockInfo.find(_offset);
+    if (it != m_listbasicBlockInfo.end()) {
+        it->second.size = _size;
+    }
+
+    return;
 }
 
 void
@@ -401,7 +442,8 @@ Contract::getGraphviz(
     graph = "digraph porosity {\n";
     graph += "rankdir = TB;\n";
     graph += "size = \"12\"\n";
-    graph += "node[shape = square];\n";
+    graph += "graph[fontname = Courier, fontsize = 10.0, labeljust = l, nojustify = true];";
+    graph += "node[shape = record];\n";
 
     for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
         uint32_t source = it->first;
@@ -413,7 +455,12 @@ Contract::getGraphviz(
         uint32_t symbolHash = it->second.fnAddrHash;
         string symbolName = symbolHash ? getFunctionName(symbolHash) : "loc_" + porosity::to_hstring(source);
         string defaultColor = dstIfTrue ? "red" : "black";
-        graph += "    \"" + source_str + "\"" "[label = \"" + symbolName + "\"];\n";
+        uint32_t basicBlockSize = it->second.size;
+
+        bytes subBlockCode(m_byteCodeRuntime.begin() + source, m_byteCodeRuntime.begin() + source + basicBlockSize);
+        string basicBlockCode = porosity::buildNode(subBlockCode, source);
+
+        graph += "    \"" + source_str + "\"" "[label = \"" + basicBlockCode + "\"];\n";
         if (dstDefault) {
             graph += "    \"" + source_str + "\"" + " -> " + "\"" + dstDefault_str + "\"" + " [color=\""+ defaultColor +"\"];\n";
         }

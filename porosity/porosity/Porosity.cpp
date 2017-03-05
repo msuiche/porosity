@@ -155,17 +155,20 @@ int main(
 )
 {
     Arguments args = { 0 };
-    header();
 
     if (!parse(argc, argv, &args)) {
+        header();
         help();
         return false;
     }
 
     if (args.debugMode) {
+        header();
         debug();
         return true;
     }
+
+    if (!(args.method & MethodControlFlowGraph)) header();
 
     Contract contract(args.codeByteRuntime);
     contract.setABI(args.abiMethodFile, args.abiMethod);
