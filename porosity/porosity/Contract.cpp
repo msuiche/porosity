@@ -277,6 +277,33 @@ Contract::walkAndConnectNodes(
     }
 }
 
+void
+Contract::walkNodes(
+    uint32_t _hash,
+    uint32_t _block,
+    std::function<bool(uint32_t, uint32_t, BasicBlockInfo *)> const& _onNode
+)
+{
+    // TODO: port walkAndConnectNodes()
+    uint32_t next = _block;
+    while (true) {
+        BasicBlockInfo *block = getBlockAt(next);
+        if (!block) break;
+
+        uint32_t current = next;
+        next = block->dstDefault;
+
+        if (block->dstJUMPI) {
+            walkNodes(_hash, block->dstJUMPI, _onNode);
+        }
+
+        if (!_onNode(_hash, current, block)) break;
+
+        next = block->dstDefault;
+        if (!next) break;
+    }
+}
+
 bool
 Contract::tagBasicBlock(
     uint32_t dest,
@@ -673,4 +700,83 @@ Contract::printFunctions(
             // getFunction(it->second.fnAddrHash);
         }
     }
+}
+
+uint32_t
+Contract::getBlockSuccessorsCount(
+    BasicBlockInfo *_block
+) {
+    return !!(_block->dstDefault) + !!(_block->dstJUMPI);
+}
+
+uint32_t
+Contract::getBlockPredecessorsCount(
+    BasicBlockInfo *_block
+) {
+    return _block->references.size();
+}
+
+BasicBlockInfo *
+Contract::getBlockAt(
+    uint32_t _offset
+) {
+    auto item = m_listbasicBlockInfo.find(_offset);
+    if (item == m_listbasicBlockInfo.end()) return 0;
+
+    BasicBlockInfo *t = &item->second;
+    return t;
+}
+
+bool
+Contract::StructureIfElse(
+    BasicBlockInfo *_block
+)
+{
+    if (getBlockSuccessorsCount(_block) != 2) return false;
+
+    BasicBlockInfo *trueBlock = getBlockAt(_block->dstJUMPI);
+    BasicBlockInfo *falseBlock = getBlockAt(_block->dstDefault);
+
+    if ((getBlockSuccessorsCount(trueBlock) != 1) || (getBlockSuccessorsCount(falseBlock) != 1)) {
+        return false;
+    }
+
+    if (trueBlock->dstDefault != falseBlock->dstDefault) return false;
+
+    //_block->
+
+    Statement ifStmt(StatementIf);
+    //ifStmt.setCondition(_block->condAttr);
+    ifStmt.NegateCondition();
+
+    ifStmt.setBlocks(trueBlock, falseBlock);
+
+    return true;
+}
+
+bool
+Contract::StructureIfs(
+    BasicBlockInfo *_block
+)
+{
+    if (getBlockSuccessorsCount(_block) != 2) return false;
+
+    BasicBlockInfo *trueBlock = getBlockAt(_block->dstJUMPI);
+    BasicBlockInfo *falseBlock = getBlockAt(_block->dstDefault);
+
+    if ((getBlockSuccessorsCount(trueBlock) != 1) || (getBlockSuccessorsCount(falseBlock) != 1)) {
+        return false;
+    }
+
+    if ((getBlockSuccessorsCount(trueBlock) == 1) && 
+        (trueBlock->dstDefault == _block->dstDefault)) {
+        Statement ifStmt(StatementIf);
+        //ifStmt.setCondition(_block->condAttr);
+        ifStmt.NegateCondition();
+
+        ifStmt.setBlocks(trueBlock, 0);
+        return true;
+    }
+
+    return false;
 }

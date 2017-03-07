@@ -25,28 +25,6 @@ using namespace dev::eth;
 
 #define NODE_DEADEND 0xdeadbabe
 
-typedef enum _NodeType {
-    RegularNode = 0x0,
-    ConditionalNode = 0x1,
-    ExitNode = 0x2
-} NodeType;
-
-typedef struct _Xref {
-    uint32_t offset;
-    NodeType conditional;
-} Xref;
-
-typedef struct _BasicBlockInfo
-{
-    uint32_t fnAddrHash; // Head
-    std::map<uint32_t, Xref> references; // map<uint32_t, NodeType>
-    uint32_t dstDefault;
-    uint32_t dstJUMPI;
-    uint32_t hashtag;
-    uint32_t size;
-    string name;
-} BasicBlockInfo;
-
 typedef struct _FunctionDef {
     std::string name;
     std::string abiName;
@@ -159,6 +137,13 @@ public:
     );
 
     void
+    walkNodes(
+        uint32_t _hash,
+        uint32_t _block,
+        std::function<bool(uint32_t, uint32_t, BasicBlockInfo *)> const& _onNode
+    );
+
+    void
     printInstruction(
         uint32_t _offset,
         Instruction _instr,
@@ -190,6 +175,32 @@ public:
     void
     printFunctions(
             void
+    );
+
+    // Blocks
+    bool
+    StructureIfElse(
+        BasicBlockInfo *_block
+    );
+
+    bool
+    StructureIfs(
+        BasicBlockInfo *_block
+    );
+
+    uint32_t
+    getBlockPredecessorsCount(
+        BasicBlockInfo *_block
+    );
+
+    uint32_t
+    getBlockSuccessorsCount(
+        BasicBlockInfo *_block
+    );
+
+    BasicBlockInfo *
+    getBlockAt(
+        uint32_t _offset
     );
 
 private:

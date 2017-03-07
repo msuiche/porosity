@@ -36,12 +36,13 @@ using namespace std;
 namespace pt = boost::property_tree;
 
 #include "SHA3.h"
+#include "BasicBlock.h"
 #include "Instruction.h"
+#include "Statement.h"
 #include "Disassm.h"
 #include "Utils.h"
 #include "VMState.h"
 #include "Contract.h"
-
 #include "Debug.h"
 
 #define VERBOSE_LEVEL 1

@@ -147,6 +147,7 @@
     <ClCompile Include="CommonData.cpp" />
     <ClCompile Include="Contract.cpp" />
     <ClCompile Include="Debug.cpp" />
+    <ClCompile Include="Statement.cpp" />
     <ClCompile Include="Instruction.cpp" />
     <ClCompile Include="Porosity.cpp" />
     <ClCompile Include="SHA3.cpp" />
@@ -156,6 +157,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assert.h" />
+    <ClInclude Include="BasicBlock.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="CommonData.h" />
     <ClInclude Include="Contract.h" />
@@ -166,6 +168,7 @@
     <ClInclude Include="json\json.hpp" />
     <ClInclude Include="Porosity.h" />
     <ClInclude Include="SHA3.h" />
+    <ClInclude Include="Statement.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="vector_ref.h" />
     <ClInclude Include="VMState.h" />

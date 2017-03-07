@@ -23,9 +23,8 @@ using namespace dev::eth;
 
 u256 address_mask("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
-#define TaintStackEntry(x) (m_stack[x].type |= VMState::StackRegisterType::UserInputTainted)
-#define TagStackEntryAsConstant(x) (m_stack[x].type |= VMState::StackRegisterType::Constant)
-#define IsConstant(first) (((first)->type == VMState::StackRegisterType::Constant) || ((first)->type == VMState::StackRegisterType::ConstantComputed))
+#define TaintStackEntry(x) (m_stack[x].type |= StackRegisterType::UserInputTainted)
+#define TagStackEntryAsConstant(x) (m_stack[x].type |= StackRegisterType::Constant)
 
 #define GetStackEntryById(x) m_stack[x]
 #define IsStackEntryTainted(x) (m_stack[x].type & (UserInput | UserInputTainted))
@@ -110,312 +109,6 @@ VMState::popStack(
     m_stack.erase(m_stack.begin());
 }
 
-VMState::Expression
-VMState::getCurrentExpression(
-    Instruction _instr
-) {
-    Expression exp;
-
-    InstructionInfo info = dev::eth::instructionInfo(_instr);
-
-    if (!dev::eth::isValidInstruction(_instr)) {
-        printf("%02X                    !INVALID!", int(_instr));
-        exp.name = "INVALID INSTRUCTION";
-        return exp;
-    }
-
-    switch (info.args) {
-        case 0:
-            exp = getExpressionForInstruction(_instr, 0, 0, 0);
-        break;
-        case 1:
-            exp = getExpressionForInstruction(_instr, &m_stack[0], 0, 0);
-        break;
-        case 2:
-            exp = getExpressionForInstruction(_instr, &m_stack[0], &m_stack[1], 0);
-            break;
-        case 3:
-            exp = getExpressionForInstruction(_instr, &m_stack[0], &m_stack[1], &m_stack[2]);
-        break;
-    }
-
-    if (exp.name.size()) {
-        if (g_VerboseLevel >= 3) printf("%s: ", __FUNCTION__);
-        if (g_VerboseLevel >= 2) printf("%s\n", exp.name.c_str());
-    }
-
-    return exp;
-}
-
-string
-VMState::getDismangledRegisterName(
-    StackRegister *first
-) {
-    if (!first) return "invalid";
-
-    switch (first->type) {
-        case UserInput:
-        case UserInputTainted:
-        case StorageType:
-            return first->name;
-        break;
-        case RegTypeLabelSha3:
-            return "store[" + first->name + "]";
-        case RegTypeFlag:
-            // TODO: point to Expresion *
-        break;
-        case ConstantComputed:
-        case Constant:
-        {
-            stringstream mod;
-            mod << "0x" << std::hex << first->value;
-            return mod.str();
-            // mod << "0x" << std::hex << second->value;
-            break;
-        }
-        case RegTypeLabelCaller:
-            return "msg.sender";
-            break;
-        case RegTypeLabelBlockHash:
-            return "blockhash";
-            break;
-        default:
-            // return first->name;
-        break;
-    }
-
-    if (g_VerboseLevel >= 5) printf("%s: unsupported type (type = 0x%x).\n", __FUNCTION__, first->type);
-    return first->name;
-}
-
-VMState::Expression
-VMState::getExpressionForInstruction(
-    Instruction _instr,
-    StackRegister *first,
-    StackRegister *second,
-    StackRegister *third
-) {
-    string exp;
-    Expression result;
-
-    result.instr = _instr;
-    if (first) first->exp.instr = _instr;
-
-    switch (_instr) {
-        case Instruction::CALLDATALOAD:
-        {
-            if (g_VerboseLevel >= 6) {
-                stringstream argname;
-                uint32_t offset = int(first->value);
-                argname << "arg_";
-                argname << std::hex << offset;
-
-                exp = first->name + " = " + argname.str() + ";";
-            }
-            break;
-        }
-        case Instruction::NOT:
-        {
-            if (!IsConstant(first))
-                exp = first->name + " = ~" + getDismangledRegisterName(first) + ";";
-            break;
-        }
-        case Instruction::AND:
-        {
-            if (!IsConstant(first) && !IsMasking160bitsAddress(first) && !IsMasking160bitsAddress(second))
-                exp = first->name + " &= " + getDismangledRegisterName(second) + ";";
-            break;
-        }
-        case Instruction::ADD:
-        case Instruction::MUL:
-        case Instruction::SUB:
-        case Instruction::DIV:
-        case Instruction::SDIV:
-        case Instruction::MOD:
-        case Instruction::SMOD:
-        case Instruction::EXP:
-        {
-            char *operation[] = { "+", "*", "-", "/", "/", "%%", "%%", "invld", "invld", "**", 0 };
-            int index = int(_instr) - int(Instruction::ADD);
-            /*exp = first->name + " = " + getDismangledRegisterName(first) + " "
-                + operation[index] + " " + getDismangledRegisterName(second) + ";";*/
-
-            if (g_VerboseLevel >= 6) {
-                exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
-            }
-            else {
-                if (!IsConstant(first))
-                    exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
-            }
-            break;
-        }
-        case Instruction::LT:
-        case Instruction::GT:
-        case Instruction::SLT:
-        case Instruction::SGT:
-        case Instruction::EQ:
-        {
-            char *operation[] = { "<", ">", "<", ">", "==", 0 };
-            stringstream mod;
-            bool isSigned = ((_instr == Instruction::SLT) || (_instr == Instruction::SGT));
-            string signedParam = isSigned ? "(signed)" : "";
-
-            int index = int(_instr) - int(Instruction::LT);
-            exp = "(" + signedParam + getDismangledRegisterName(first) + " " + operation[index] + " " + signedParam + getDismangledRegisterName(second) + ")";
-
-            first->exp.name = exp;
-            first->exp.instr = _instr;
-
-            if (g_VerboseLevel >= 6) {
-                exp = first->exp.name;
-            }
-            else {
-                exp = "";
-            }
-            break;
-        }
-        case Instruction::ISZERO:
-        {
-            // change name
-            // change labeltype
-            // tag expression to value stack.
-            // m_jmpFlag = (m_stack[0].value == 0);
-
-            string cond;
-            if (first->exp.name.size()) cond = first->exp.name;
-            else cond = getDismangledRegisterName(first);
-            exp = "(!(" + cond + "))";
-
-            first->exp.name = exp;
-            if (g_VerboseLevel >= 6) {
-                exp = first->exp.name;
-            }
-            else {
-                exp = "";
-            }
-
-            break;
-        }
-        case Instruction::JUMPDEST:
-        {
-            // TODO: If not function header;
-            // exp = "}";
-            break;
-        }
-        case Instruction::JUMPI:
-        {
-            exp = "if (!" + second->exp.name + ") {";
-            break;
-        }
-        case Instruction::ADDMOD:
-        case Instruction::MULMOD:
-        {
-            char *operation[] = { "+", "*", 0 };
-            int index = int(_instr) - int(Instruction::ADDMOD);
-            exp = first->name + " = (" + getDismangledRegisterName(first) + " " + operation[index];
-            exp += " " + getDismangledRegisterName(second) + ") %% " + getDismangledRegisterName(third) + ";";
-            break;
-        }
-        case Instruction::SSTORE:
-        {
-            stringstream argname;
-            string var_name;
-
-            uint32_t offset = int(first->value);
-            argname << "store_";
-            argname << std::hex << offset;
-
-            if (first->type == RegTypeLabelSha3)
-                var_name = "store[" + first->name + "]";
-            else
-                var_name = argname.str();
-
-            if ((g_VerboseLevel > 4) || (var_name != getDismangledRegisterName(second)))
-                exp = var_name + " = " + getDismangledRegisterName(second) + ";";
-            break;
-        }
-        case Instruction::MSTORE:
-        {
-            stringstream argname;
-            uint32_t offset = int(first->value);
-            argname << "memory[0x";
-            argname << std::hex << offset;
-            argname << "]";
-
-#if (g_VerboseLevel >= 6)
-            exp = argname.str() + " = " + getDismangledRegisterName(second) + ";";
-#endif
-            break;
-        }
-        case Instruction::SLOAD:
-        {
-#if (g_VerboseLevel >= 6)
-            stringstream argname;
-            uint32_t offset = int(first->value);
-            argname << "store_";
-            argname << std::hex << offset;
-
-            if (first->type == RegTypeLabelSha3)
-                exp = "store[" + first->name + "]";
-            else
-                exp = argname.str();
-#endif
-            break;
-        }
-        case Instruction::SHA3:
-        {
-            uint64_t offset = int(first->value);
-            uint64_t size = int(second->value);
-            // stack[0] = sha3(memStorage + offset, size);
-
-#if (g_VerboseLevel >= 6)
-            {
-                //uint64_t offset = (uint64_t)first->value;
-                //uint64_t size = (uint64_t)second->value;
-                exp = "sha3(" + getDismangledRegisterName(getMemoryData(offset)) + ", " + getDismangledRegisterName(second) + ");";
-            }
-#endif
-            break;
-        }
-        case Instruction::LOG0:
-        case Instruction::LOG1:
-        case Instruction::LOG2:
-        case Instruction::LOG3:
-        case Instruction::LOG4:
-        {
-            // Events allow light clients to react on changes efficiently.
-
-            // Sent(msg.sender, receiver, amount);
-            // LOG1(m_stack[0], m_stack[1], m_stack[2])
-
-            exp = "LOG(" + getDismangledRegisterName(getMemoryData(int(first->value))) + ", " + getDismangledRegisterName(getMemoryData(int(second->value)));
-            int itemsToPop = int(_instr) - int(Instruction::LOG0);
-            for (int i = 0; i < itemsToPop; i++) exp += ", " + getDismangledRegisterName(&GetStackEntryById(2 + i));
-            exp += ");";
-
-            break;
-        }
-        case Instruction::STOP:
-            exp = "return;";
-        break;
-        case Instruction::RETURN:
-            exp = "return " + first->name + ";";
-            break;
-        default:
-        break;
-    }
-
-    // result.name = exp;
-
-    if (exp.size()) 
-    {
-        result.name = getDepth() + exp;
-        // result << "\n"; // ?
-    }
-
-    return result;
-}
-
 bool
 VMState::executeInstruction(
     uint32_t _offset,
@@ -463,7 +156,7 @@ VMState::executeInstruction(
         case Instruction::PUSH31:
         case Instruction::PUSH32:
         {
-            StackRegister reg = { "", Constant, 0, 0 };
+            StackRegister reg = { "", "", Constant, 0, 0 };
             reg.value = _data;
             reg.type = Constant;
             pushStack(reg);
@@ -477,7 +170,7 @@ VMState::executeInstruction(
             // argv[0]: 0x04 -> 0x24 - 256bits (32 bytes)
             // argv[1]: 0x24 -> 0x44 - 256bits (32 bytes)
             // m_stack.erase(m_stack.begin());
-            StackRegister reg = { "", UserInput, 0, 0 };
+            StackRegister reg = { "", "", UserInput, 0, 0 };
 
             reg.type = UserInput;
             uint32_t offset = int(m_stack[0].value);
@@ -514,6 +207,16 @@ VMState::executeInstruction(
             // TODO:
             popStack();
             popStack();
+        break;
+        case Instruction::MLOAD:
+        {
+            uint32_t offset = int(GetStackEntryById(0).value);
+            stringstream argname;
+            argname << "memory[0x";
+            argname << std::hex << offset;
+            argname << "]";
+            GetStackEntryById(0).name = argname.str();
+        }
         break;
         case Instruction::SLOAD:
         {
@@ -766,7 +469,7 @@ VMState::executeInstruction(
         {
             // this can send actions, check if in between brackets.
             u256 data = _data;
-            StackRegister reg = { "", RegTypeLabelCaller, 0, 0 };
+            StackRegister reg = { "", "", RegTypeLabelCaller, 0, 0 };
             reg.value = m_caller;
             reg.name = "msg.sender";
             reg.type = RegTypeLabelCaller;
@@ -776,7 +479,7 @@ VMState::executeInstruction(
         case Instruction::BLOCKHASH:
         {
             u256 data = _data;
-            StackRegister reg = { "", RegTypeLabelBlockHash, 0, 0 };
+            StackRegister reg = { "", "", RegTypeLabelBlockHash, 0, 0 };
             reg.value = u256("0xdeadbeefdeadbeefdeadbeefdeadbeef");
             reg.name = "blockhash";
             reg.type = RegTypeLabelBlockHash;
@@ -823,7 +526,7 @@ VMState::setMemoryData(
 
 }
 
-VMState::StackRegister *
+StackRegister *
 VMState::getMemoryData(
     uint32_t _offset
 ) {
@@ -867,15 +570,303 @@ VMState::executeByteCode(
             displayStack();
         }
         if (g_SingleStepping || (g_VerboseLevel >= 2)) porosity::printInstruction(offset, instr, data);
-        Expression exp = getCurrentExpression(instr);
-        if (exp.name.size()) printf("%s\n", exp.name.c_str());
+
+        InstructionContext instrCxt(instr, m_stack);
+        if (instrCxt.getCurrentExpression()) {
+            instrCxt.printExpression();
+        }
+
         bool ret = executeInstruction(offset, instr, data);
         if (g_SingleStepping) {
             printf("AFTER:\n");
             displayStack();
             printf("=================\n");
         }
+
         if (g_SingleStepping) getchar();
+
         if (!ret || (m_eip == m_byteCodeRuntimeRef->size())) break;
     }
+}
+
+// Instruction Context
+
+bool
+InstructionContext::getCurrentExpression(
+    void
+) {
+    m_exp = getContextForInstruction();
+
+    if (m_exp.size()) {
+        if (g_VerboseLevel >= 3) printf("%s: ", __FUNCTION__);
+        if (g_VerboseLevel >= 2) printf("%s\n", m_exp.c_str());
+    }
+
+    return true;
+}
+
+bool
+InstructionContext::getContextForInstruction(
+    void
+) {
+    string exp;
+
+    Instruction instr = m_instr;
+    StackRegister *first = &m_stack[0];
+    StackRegister *second = &m_stack[1];
+    StackRegister *third = &m_stack[2];
+
+    switch (m_instr) {
+        case Instruction::CALLDATALOAD:
+        {
+            if (g_VerboseLevel >= 6) {
+                stringstream argname;
+                uint32_t offset = int(first->value);
+                argname << "arg_";
+                argname << std::hex << offset;
+
+                exp = first->name + " = " + argname.str() + ";";
+            }
+            break;
+        }
+        case Instruction::NOT:
+        {
+            if (!IsConstant(first))
+                exp = first->name + " = ~" + getDismangledRegisterName(first) + ";";
+            break;
+        }
+        case Instruction::AND:
+        {
+            if (!IsConstant(first) && !IsMasking160bitsAddress(first) && !IsMasking160bitsAddress(first))
+                exp = first->name + " &= " + getDismangledRegisterName(first) + ";";
+            break;
+        }
+        case Instruction::ADD:
+        case Instruction::MUL:
+        case Instruction::SUB:
+        case Instruction::DIV:
+        case Instruction::SDIV:
+        case Instruction::MOD:
+        case Instruction::SMOD:
+        case Instruction::EXP:
+        {
+            char *operation[] = { "+", "*", "-", "/", "/", "%%", "%%", "invld", "invld", "**", 0 };
+            int index = int(instr) - int(Instruction::ADD);
+            /*exp = first->name + " = " + getDismangledRegisterName(first) + " "
+            + operation[index] + " " + getDismangledRegisterName(second) + ";";*/
+
+            if (g_VerboseLevel >= 6) {
+                exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
+            }
+            else {
+                if (!IsConstant(first))
+                    exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
+            }
+            break;
+        }
+        case Instruction::LT:
+        case Instruction::GT:
+        case Instruction::SLT:
+        case Instruction::SGT:
+        case Instruction::EQ:
+        {
+            char *operation[] = { "<", ">", "<", ">", "==", 0 };
+            stringstream mod;
+            bool isSigned = ((instr == Instruction::SLT) || (instr == Instruction::SGT));
+            string signedParam = isSigned ? "(signed)" : "";
+
+            int index = int(instr) - int(Instruction::LT);
+            exp = "(" + signedParam + getDismangledRegisterName(first) + " " + operation[index] + " " + signedParam + getDismangledRegisterName(second) + ")";
+
+            first->exp = exp;
+            // first->instr = instr;
+            m_stmt.setCondition(instr);
+
+            if (g_VerboseLevel >= 6) {
+                exp = first->name;
+            }
+            else {
+                exp = "";
+            }
+            break;
+        }
+        case Instruction::ISZERO:
+        {
+            // change name
+            // change labeltype
+            // tag expression to value stack.
+            // m_jmpFlag = (m_stack[0].value == 0);
+
+            string cond;
+            if (first->exp.size()) cond = first->exp;
+            else cond = getDismangledRegisterName(first);
+            exp = "(!(" + cond + "))";
+
+            m_stmt.setCondition(instr);
+
+            first->exp = exp;
+            if (g_VerboseLevel >= 6) {
+                exp = first->exp;
+            }
+            else {
+                exp = "";
+            }
+
+            break;
+        }
+        case Instruction::JUMPDEST:
+        {
+            // TODO: If not function header;
+            // exp = "}";
+            break;
+        }
+        case Instruction::JUMPI:
+        {
+            exp = "if (!" + second->exp + ") {";
+            break;
+        }
+        case Instruction::ADDMOD:
+        case Instruction::MULMOD:
+        {
+            char *operation[] = { "+", "*", 0 };
+            int index = int(instr) - int(Instruction::ADDMOD);
+            exp = first->name + " = (" + getDismangledRegisterName(first) + " " + operation[index];
+            exp += " " + getDismangledRegisterName(second) + ") %% " + getDismangledRegisterName(third) + ";";
+            break;
+        }
+        case Instruction::SSTORE:
+        {
+            stringstream argname;
+            string var_name;
+
+            uint32_t offset = int(first->value);
+            argname << "store_";
+            argname << std::hex << offset;
+
+            if (first->type == RegTypeLabelSha3)
+                var_name = "store[" + first->name + "]";
+            else
+                var_name = argname.str();
+
+            if ((g_VerboseLevel > 4) || (var_name != getDismangledRegisterName(second)))
+                exp = var_name + " = " + getDismangledRegisterName(second) + ";";
+            break;
+        }
+        case Instruction::MSTORE:
+        {
+            stringstream argname;
+            uint32_t offset = int(first->value);
+            argname << "memory[0x";
+            argname << std::hex << offset;
+            argname << "]";
+
+    #if (g_VerboseLevel >= 6)
+            exp = argname.str() + " = " + getDismangledRegisterName(second) + ";";
+    #endif
+            break;
+        }
+        case Instruction::SLOAD:
+        {
+    #if (g_VerboseLevel >= 6)
+            stringstream argname;
+            uint32_t offset = int(first->value);
+            argname << "store_";
+            argname << std::hex << offset;
+
+            if (first->type == RegTypeLabelSha3)
+                exp = "store[" + first->name + "]";
+            else
+                exp = argname.str();
+    #endif
+            break;
+        }
+        case Instruction::SHA3:
+        {
+            uint64_t offset = int(first->value);
+            uint64_t size = int(second->value);
+            // stack[0] = sha3(memStorage + offset, size);
+
+    #if (g_VerboseLevel >= 6)
+            {
+                //uint64_t offset = (uint64_t)first->value;
+                //uint64_t size = (uint64_t)second->value;
+                exp = "sha3(" + getDismangledRegisterName(getMemoryData(offset)) + ", " + getDismangledRegisterName(second) + ");";
+            }
+    #endif
+            break;
+        }
+        case Instruction::LOG0:
+        case Instruction::LOG1:
+        case Instruction::LOG2:
+        case Instruction::LOG3:
+        case Instruction::LOG4:
+        {
+            // Events allow light clients to react on changes efficiently.
+
+            // Sent(msg.sender, receiver, amount);
+            // LOG1(m_stack[0], m_stack[1], m_stack[2])
+
+            // exp = "LOG(" + getDismangledRegisterName(getMemoryData(int(first->value))) + ", " + getDismangledRegisterName(getMemoryData(int(second->value)));
+            exp = "LOG(" + getDismangledRegisterName(first) + ", " + getDismangledRegisterName(second);
+            int itemsToPop = int(instr) - int(Instruction::LOG0);
+            for (int i = 0; i < itemsToPop; i++) exp += ", " + getDismangledRegisterName(&GetStackEntryById(2 + i));
+            exp += ");";
+
+            break;
+        }
+        case Instruction::STOP:
+            exp = "return;";
+            break;
+        case Instruction::RETURN:
+            exp = "return " + first->name + ";";
+            break;
+        default:
+            return false;
+            break;
+    }
+
+    if (exp.size()) m_exp = exp;
+
+    return true;
+}
+
+string
+InstructionContext::getDismangledRegisterName(
+    StackRegister *first
+) {
+    if (!first) return "invalid";
+
+    switch (first->type) {
+    case UserInput:
+    case UserInputTainted:
+    case StorageType:
+        return first->name;
+        break;
+    case RegTypeLabelSha3:
+        return "store[" + first->name + "]";
+    case RegTypeFlag:
+        // TODO: point to Expresion *
+        break;
+    case ConstantComputed:
+    case Constant:
+    {
+        stringstream mod;
+        mod << "0x" << std::hex << first->value;
+        return mod.str();
+        // mod << "0x" << std::hex << second->value;
+        break;
+    }
+    case RegTypeLabelCaller:
+        return "msg.sender";
+        break;
+    case RegTypeLabelBlockHash:
+        return "blockhash";
+        break;
+    default:
+        // return first->name;
+        break;
+    }
+
+    if (g_VerboseLevel >= 5) printf("%s: unsupported type (type = 0x%x).\n", __FUNCTION__, first->type);
+    return first->name;
 }

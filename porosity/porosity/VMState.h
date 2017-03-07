@@ -21,51 +21,38 @@ using namespace std;
 using namespace dev;
 using namespace dev::eth;
 
+typedef enum _StackRegisterType {
+    NumValueDefault = 0,
+    Constant = 0x10,
+    ConstantComputed = 0x11,
+    RegTypeLabel = 0x11,
+    RegTypeLabelCaller = 0x12,
+    RegTypeLabelBlockHash = 0x13,
+    RegTypeFlag = 0x20,
+
+    RegTypeLabelSha3 = 0x30,
+    UserInput = 0x100,
+    UserInputTainted = 0x200,
+    StorageType = 0x300
+} StackRegisterType;
+
+typedef struct _StackRegister {
+    string name;
+    string exp;
+    uint32_t type; // StackRegisterType
+    uint32_t offset;
+    u256 value;
+    ConditionAttribute cond;
+} StackRegister;
+
 #define MAX_MEMORY_SPACE 1024
+
+#define IsConstant(first) (((first)->type == StackRegisterType::Constant) || ((first)->type == StackRegisterType::ConstantComputed))
+#define IsStackEntryTypeTainted(type) (type & (UserInput | UserInputTainted))
+#define IsMasking160bitsAddress(x) ((x)->value.compare(address_mask) == 0)
+
 class VMState {
 public:
-    typedef enum _ExpressionCmpOperator {
-        ExpCmpOp_None = 0,
-        ExpCmpOp_Equal = 0x1,
-        ExpCmpOp_NonEqual = 0x2,
-        ExpCmpOp_LessThan = 0x3,
-        ExpCmpOp_GreaterThan = 0x4,
-        ExpCmpOp_SignedLessThan = 0x5,
-        ExpCmpOp_SignedGreaterThan = 0x6,
-        ExpCmpOp_IsZero = 0x7
-    } ExpressionCmpOperator;
-
-    typedef struct _Expression {
-        Instruction instr;
-        string name;
-        _Expression *_exp_ptr;
-        ExpressionCmpOperator opr;
-    } Expression;
-
-    typedef enum _StackRegisterType {
-        NumValueDefault = 0,
-        Constant = 0x10,
-        ConstantComputed = 0x11,
-        RegTypeLabel = 0x11,
-        RegTypeLabelCaller = 0x12,
-        RegTypeLabelBlockHash = 0x13,
-        RegTypeFlag = 0x20,
-
-        RegTypeLabelSha3 = 0x30,
-        UserInput = 0x100,
-        UserInputTainted = 0x200,
-        StorageType = 0x300
-    } StackRegisterType;
-
-    typedef struct _StackRegister {
-        string name;
-        uint32_t type; // StackRegisterType
-        uint32_t offset;
-        u256 value;
-
-        Expression exp; // mainly for conditional expressions.
-    } StackRegister;
-
     VMState() {
         clear();
     }
@@ -75,19 +62,6 @@ public:
         uint32_t _offset,
         Instruction _instr,
         u256 const& _data
-    );
-
-    Expression
-    getExpressionForInstruction(
-        Instruction _instr,
-        StackRegister *first,
-        StackRegister *second,
-        StackRegister *third
-    );
-
-    Expression
-    getCurrentExpression(
-        Instruction _instr
     );
 
     void
@@ -132,11 +106,6 @@ public:
         void
     );
 
-    string
-    getDismangledRegisterName(
-        StackRegister *first
-    );
-
     void
     executeByteCode(
         bytes *_byteCodeRuntime
@@ -162,6 +131,56 @@ private:
     u256 m_caller = 0xdeadbeef;
 
     int m_depthLevel = 1;
+};
+
+
+class InstructionContext {
+public:
+    InstructionContext(
+        Instruction _instr,
+        vector<StackRegister> _stack
+    ) {
+        m_instr = _instr;
+        m_info = dev::eth::instructionInfo(m_instr);
+
+        if (!dev::eth::isValidInstruction(_instr)) {
+            printf("%02X                    !INVALID!", int(_instr));
+            m_exp = "INVALID INSTRUCTION";
+            return;
+        }
+
+        m_stack = _stack;
+    }
+
+    void
+    printExpression() {
+        if (m_exp.size()) printf("%s\n", m_exp.c_str());
+    }
+
+    bool
+    getCurrentExpression(
+        void
+    );
+
+    bool
+    getContextForInstruction(
+        void
+    );
+
+    string
+    getDismangledRegisterName(
+        StackRegister *first
+    );
+
+
+private:
+    Instruction m_instr;
+    InstructionInfo m_info;
+    Statement m_stmt;
+    string m_exp;
+
+    vector<StackRegister> m_stack;
+
 };
 
 #endif
