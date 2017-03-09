@@ -21,36 +21,6 @@ using namespace std;
 using namespace dev;
 using namespace dev::eth;
 
-typedef enum _StackRegisterType {
-    NumValueDefault = 0,
-    Constant = 0x10,
-    ConstantComputed = 0x11,
-    RegTypeLabel = 0x11,
-    RegTypeLabelCaller = 0x12,
-    RegTypeLabelBlockHash = 0x13,
-    RegTypeFlag = 0x20,
-
-    RegTypeLabelSha3 = 0x30,
-    UserInput = 0x100,
-    UserInputTainted = 0x200,
-    StorageType = 0x300
-} StackRegisterType;
-
-typedef struct _StackRegister {
-    string name;
-    string exp;
-    uint32_t type; // StackRegisterType
-    uint32_t offset;
-    u256 value;
-    ConditionAttribute cond;
-} StackRegister;
-
-#define MAX_MEMORY_SPACE 1024
-
-#define IsConstant(first) (((first)->type == StackRegisterType::Constant) || ((first)->type == StackRegisterType::ConstantComputed))
-#define IsStackEntryTypeTainted(type) (type & (UserInput | UserInputTainted))
-#define IsMasking160bitsAddress(x) ((x)->value.compare(address_mask) == 0)
-
 class VMState {
 public:
     VMState() {
@@ -109,6 +79,11 @@ public:
     void
     executeByteCode(
         bytes *_byteCodeRuntime
+    );
+
+    void
+    executeBlock(
+        BasicBlockInfo *_block
     );
 
     void

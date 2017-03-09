@@ -95,7 +95,7 @@
     <ClInclude Include="Statement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="BasicBlock.h">
+    <ClInclude Include="PorosityDefs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

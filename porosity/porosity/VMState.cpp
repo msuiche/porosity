@@ -538,6 +538,23 @@ VMState::getMemoryData(
 }
 
 void
+VMState::executeBlock(
+    BasicBlockInfo *_block
+) {
+    VMState current = *this;
+
+    current.m_eip = _block->offset;
+
+    for (auto opcde = _block->instructions.begin(); opcde != _block->instructions.end(); ++opcde) {
+
+        // InstructionContext instrCxt(opcde->offInfo.inst, current.m_stack);
+        
+        if (g_SingleStepping || (g_VerboseLevel >= 2)) porosity::printInstruction(opcde->offInfo.offset, opcde->offInfo.inst, opcde->offInfo.data);
+        bool ret = executeInstruction(opcde->offInfo.offset, opcde->offInfo.inst, opcde->offInfo.data);
+    }
+}
+
+void
 VMState::executeByteCode(
     bytes *_byteCodeRuntime
 ) {

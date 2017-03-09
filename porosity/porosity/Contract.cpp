@@ -47,23 +47,29 @@ Contract::printInstructions(
     return ret.str();
 }
 
+auto
+Contract::addBasicBlock(
+    uint32_t _offset,
+    uint32_t _size
+) {
+    BasicBlockInfo newEntry = { 0 };
+    newEntry.offset = _offset;
+    newEntry.size = _size;
+
+    auto newBlock = m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(_offset, newEntry));
+
+    return newBlock;
+}
+
 void
-Contract::getBasicBlocks(
+Contract::enumerateInstructionsAndBlocks(
     void
-)
-{
-    if (m_byteCodeRuntime.empty()) return;
-
-    BasicBlockInfo emptyBlockInfo = { 0 };
-
+) {
     m_instructions.clear();
     m_listbasicBlockInfo.clear();
 
-    // Exitnode
-    m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(NODE_DEADEND, emptyBlockInfo));
-
-    // Entrypoint
-    m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(0, emptyBlockInfo));
+    addBasicBlock(NODE_DEADEND, 0); // ExitNode to be resolved later.
+    addBasicBlock(0x0, 0); // EntryPoint
 
     // Collect all the basic blocks.
     dev::eth::eachInstruction(m_byteCodeRuntime, [&](uint32_t _offset, Instruction _instr, u256 const& _data) {
@@ -83,11 +89,17 @@ Contract::getBasicBlocks(
         // Collecting the list of basic blocks.
         //
         if (_instr == Instruction::JUMPDEST) {
-            // printf("JUMPDEST: 0x%08X\n", _offset);
-            m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(_offset, emptyBlockInfo));
+            addBasicBlock(_offset, 0);
         }
     });
+}
 
+void
+Contract::assignXrefToBlocks(
+    void
+)
+{
+    
     //
     // Attributing the XREF
     //
@@ -205,8 +217,7 @@ Contract::getBasicBlocks(
                     if (next->inst != Instruction::JUMPDEST) {
                         // We need to add this new basic block.
                         // printf("JUMPDEST: 0x%08X\n", _offset);
-                        auto newBlock = m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(next->offset, emptyBlockInfo));
-                        newBlock->second.size = nextInstrBlockSize;
+                        addBasicBlock(next->offset, nextInstrBlockSize);
                     }
                     addBlockReference(next->offset, prevBasicBlockOffset, nextInstrBlockSize, false, RegularNode);
                 }
@@ -248,8 +259,107 @@ Contract::getBasicBlocks(
     }
 
     m_listbasicBlockInfo.erase(m_listbasicBlockInfo.find(NODE_DEADEND));
+}
+
+void
+Contract::getBasicBlocks(
+    void
+)
+{
+    if (m_byteCodeRuntime.empty()) return;
+
+    BasicBlockInfo emptyBlockInfo = { 0 };
+
+    enumerateInstructionsAndBlocks();
+
+    assignXrefToBlocks();
+
+    addInstructionsToBlocks();
+    computeDominators();
 
     return;
+}
+
+void
+Contract::computeDominators(
+    void
+) {
+    int nBlocks = m_listbasicBlockInfo.size();
+    uint32_t i = 0;
+
+    for (i = 0; i < m_listbasicBlockInfo.size(); i++) {
+        m_listbasicBlockInfo[i].id = i;
+        for (int j = 0; j < nBlocks; j++) m_listbasicBlockInfo[i].dominators |= (1 << j);
+    }
+
+    BasicBlockInfo* block = &m_listbasicBlockInfo[0];
+    block->dominators = 0;
+    m_listbasicBlockInfo[i].dominators |= (1 << block->id);
+
+    u256 T;
+
+    bool changed = false;
+
+    do {
+        for (auto block = m_listbasicBlockInfo.begin();
+             block != m_listbasicBlockInfo.end();
+              ++block) {
+                //if (block == entry_block)
+                // continue
+
+                for (auto pred = block->second.references.begin();
+                        pred != block->second.references.end();
+                        ++pred) {
+
+                    T = 0;
+                    T |= block->second.dominators;
+
+                    BasicBlockInfo *predBlock = getBlockAt(pred->first);
+                    if (!predBlock) break;
+                    block->second.dominators &= predBlock->dominators;
+                    block->second.dominators |= (1 << block->second.id);
+
+                    if (block->second.dominators != T) changed = true;
+                }
+            }
+
+    } while (changed);
+}
+
+bool
+Contract::addInstructionsToBlocks(
+    void
+)
+{
+    for (auto block = m_listbasicBlockInfo.begin(); block != m_listbasicBlockInfo.end(); ++block) {
+        uint32_t off_start = block->second.offset;
+        uint32_t off_end = off_start + block->second.size;
+
+        uint32_t index_start = getInstructionIndexAtOffset(off_start);
+        uint32_t index_end = getInstructionIndexAtOffset(off_end);
+
+        while (index_start < index_end) {
+            InstructionState instState;
+            instState.offInfo = m_instructions[index_start];
+            block->second.instructions.insert(block->second.instructions.end(), instState);
+            index_start++;
+        }
+    }
+
+    return true;
+}
+
+uint32_t
+Contract::getInstructionIndexAtOffset(
+    uint32_t _offset
+) {
+    for (uint32_t instIndex = 0; instIndex < m_instructions.size(); instIndex++) {
+        OffsetInfo *currentOffInfo = &m_instructions[instIndex];
+        uint32_t currentOffset = currentOffInfo->offset;
+        if (currentOffset == _offset) return instIndex;
+    }
+
+    return 0;
 }
 
 void

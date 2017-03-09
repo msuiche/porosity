@@ -21,24 +21,6 @@ using namespace std;
 using namespace dev;
 using namespace dev::eth;
 
-#define MAX_XREFS 32
-
-#define NODE_DEADEND 0xdeadbabe
-
-typedef struct _FunctionDef {
-    std::string name;
-    std::string abiName;
-    std::string inputs;
-    std::string type;
-} FunctionDef;
-
-typedef struct _OffsetInfo {
-    uint32_t offset;
-    dev::eth::Instruction inst;
-    dev::eth::InstructionInfo instInfo;
-    dev::u256 data;
-} OffsetInfo;
-
 class Contract {
 public:
     Contract(bytes bytecode) {
@@ -120,6 +102,22 @@ public:
         uint32_t hash
     );
 
+    auto
+    addBasicBlock(
+        uint32_t _offset,
+        uint32_t _size
+    );
+
+    uint32_t
+    getInstructionIndexAtOffset(
+        uint32_t _offset
+    );
+
+    bool
+    addInstructionsToBlocks(
+        void
+    );
+
     uint32_t
     getBlockSize(
         uint32_t offset
@@ -163,6 +161,11 @@ public:
     );
 
     void
+    computeDominators(
+        void
+    );
+
+    void
     printBranchName(
         uint32_t _offset
     );
@@ -201,6 +204,16 @@ public:
     BasicBlockInfo *
     getBlockAt(
         uint32_t _offset
+    );
+
+    void
+    enumerateInstructionsAndBlocks(
+        void
+    );
+
+    void
+    Contract::assignXrefToBlocks(
+        void
     );
 
 private:
