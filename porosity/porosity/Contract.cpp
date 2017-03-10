@@ -268,8 +268,6 @@ Contract::getBasicBlocks(
 {
     if (m_byteCodeRuntime.empty()) return;
 
-    BasicBlockInfo emptyBlockInfo = { 0 };
-
     enumerateInstructionsAndBlocks();
 
     assignXrefToBlocks();
@@ -287,25 +285,27 @@ Contract::computeDominators(
     int nBlocks = m_listbasicBlockInfo.size();
     uint32_t i = 0;
 
-    for (i = 0; i < m_listbasicBlockInfo.size(); i++) {
-        m_listbasicBlockInfo[i].id = i;
-        for (int j = 0; j < nBlocks; j++) m_listbasicBlockInfo[i].dominators |= (1 << j);
+    for (auto block = m_listbasicBlockInfo.begin();
+         block != m_listbasicBlockInfo.end();
+         ++block) {
+        block->second.id = i++;
+
+        for (int j = 0; j < nBlocks; j++) block->second.dominators |= (1 << j);
     }
 
-    BasicBlockInfo* block = &m_listbasicBlockInfo[0];
-    block->dominators = 0;
-    m_listbasicBlockInfo[i].dominators |= (1 << block->id);
+    m_listbasicBlockInfo[0].dominators = 0;
+    m_listbasicBlockInfo[0].dominators |= (1 << m_listbasicBlockInfo[0].id);
 
     u256 T;
 
     bool changed = false;
-
     do {
+        changed = false;
+
         for (auto block = m_listbasicBlockInfo.begin();
              block != m_listbasicBlockInfo.end();
               ++block) {
-                //if (block == entry_block)
-                // continue
+                if (block == m_listbasicBlockInfo.begin()) continue;
 
                 for (auto pred = block->second.references.begin();
                         pred != block->second.references.end();
@@ -321,6 +321,7 @@ Contract::computeDominators(
 
                     if (block->second.dominators != T) changed = true;
                 }
+
             }
 
     } while (changed);
@@ -337,7 +338,7 @@ Contract::addInstructionsToBlocks(
 
         uint32_t index_start = getInstructionIndexAtOffset(off_start);
         uint32_t index_end = getInstructionIndexAtOffset(off_end);
-
+        printf("Instruction Copy (start = 0x%x, end = 0x%x)\n", off_start, off_end);
         while (index_start < index_end) {
             InstructionState instState;
             instState.offInfo = m_instructions[index_start];
@@ -353,13 +354,16 @@ uint32_t
 Contract::getInstructionIndexAtOffset(
     uint32_t _offset
 ) {
-    for (uint32_t instIndex = 0; instIndex < m_instructions.size(); instIndex++) {
+    uint32_t instIndex = 0;
+
+    for (instIndex = 0; instIndex < m_instructions.size(); instIndex++) {
         OffsetInfo *currentOffInfo = &m_instructions[instIndex];
         uint32_t currentOffset = currentOffInfo->offset;
-        if (currentOffset == _offset) return instIndex;
+        if (currentOffset == _offset) break;
     }
 
-    return 0;
+    // if offset not found, we still return the number of instructions (last block)
+    return instIndex;
 }
 
 void
@@ -382,6 +386,7 @@ Contract::walkAndConnectNodes(
         if (next == NODE_DEADEND) {
             auto exitNode = m_exitNodesByHash.find(_hash);
             block->second.dstDefault = exitNode->second;
+            block->second.nextDefault = getBlockAt(block->second.dstDefault);
             break; // next
         }
     }
@@ -473,8 +478,14 @@ Contract::addBlockReference(
    //
    it = m_listbasicBlockInfo.find(_src);
    if (it != m_listbasicBlockInfo.end()) {
-       if (_conditional == NodeType::ConditionalNode) it->second.dstJUMPI = _block;
-       else it->second.dstDefault = _block;
+
+       if (_conditional == NodeType::ConditionalNode) {
+           it->second.nextJUMPI = getBlockAt(_block);
+           it->second.dstJUMPI = _block;
+       } else {
+           it->second.nextDefault = getBlockAt(_block);
+           it->second.dstDefault = _block;
+       }
        it->second.size = _blockSize;
        dstRefAdded = true;
    }
@@ -541,7 +552,9 @@ Contract::printBlockReferences(
         for (auto ref = refs.begin(); ref != refs.end(); ++ref) {
             printf("0x%08x", ref->second.offset);
         }
-        printf("}");
+        printf("}, ");
+        if (it->second.dstJUMPI) printf("JUMPI: 0x%08X, ", it->second.dstJUMPI);
+        printf("Default: 0x%08X ", it->second.dstDefault);
         if (it->second.fnAddrHash) {
             printf(", hash = 0x%08X, ", it->second.fnAddrHash);
             printf("str = %s, ", getFunctionName(it->second.fnAddrHash).c_str());
@@ -889,4 +902,56 @@ Contract::StructureIfs(
     }
 
     return false;
+}
+
+void
+Contract::decompile(
+    uint32_t _hash
+) {
+    uint32_t offset = getFunctionOffset(_hash);
+    if (!offset) return;
+
+    VMState newState = m_vmState;
+    newState.m_basicBlocks = &m_listbasicBlockInfo;
+
+    BasicBlockInfo *block = getBlockAt(offset);
+    newState.executeFunction(block); // get stack status
+
+    do {
+        for (auto i = block->instructions.begin();
+                  i != block->instructions.end();
+                  ++i) {
+            string name = "";
+            if (i->stack.size()) name = InstructionContext::getDismangledRegisterName(&i->stack[0]);
+            printf("0x%08x: %s [%s]\n", i->offInfo.offset, i->offInfo.instInfo.name.c_str(), name.c_str());
+
+            displayStack(&i->stack);
+
+            string exp;
+            switch (i->offInfo.inst) {
+                case Instruction::MLOAD:
+                break;
+                case Instruction::MSTORE:
+                {
+                    auto next = i + 1;
+                    exp = next->stack[0].name + " = " + i->stack[1].exp + ";";
+                    break;
+                }
+                case Instruction::SLOAD:
+                break;
+                case Instruction::SSTORE:
+                break;
+                case Instruction::RETURN:
+                    exp = "return " + i->stack[0].name + ";";
+                break;
+            }
+            printf("%s\n", exp.c_str());
+        }
+
+        if (block->nextJUMPI) {
+            printf("IF STATEMENT\n");
+        }
+
+        block = block->nextDefault;
+    } while (block);
 }

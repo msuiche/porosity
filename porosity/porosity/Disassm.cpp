@@ -65,7 +65,7 @@ namespace porosity {
                         data >>= 8;
                         //printf("%02X ", dataByte);
                         stream << std::setfill('0') << std::setw(sizeof(char) * 2)
-                            << std::hex << int(dataByte) << " ";
+                            << std::hex << int(dataByte) << "  ";
                     }
                 }
                 else {

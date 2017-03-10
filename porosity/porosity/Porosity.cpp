@@ -175,7 +175,7 @@ int main(
 
     Contract contract(args.codeByteRuntime);
     contract.setABI(args.abiMethodFile, args.abiMethod);
-    contract.setData(args.arguments);   
+    contract.setData(args.arguments);
 
     if (args.method & MethodControlFlowGraph) {
         printf("%s\n", contract.getGraphviz(false).c_str());

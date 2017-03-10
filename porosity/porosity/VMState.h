@@ -21,6 +21,13 @@ using namespace std;
 using namespace dev;
 using namespace dev::eth;
 
+void
+displayStack(
+    vector<StackRegister> *stack
+);
+
+typedef BasicBlockInfo(*GETBLOCK)(uint32_t);
+
 class VMState {
 public:
     VMState() {
@@ -81,9 +88,18 @@ public:
         bytes *_byteCodeRuntime
     );
 
-    void
+    bool
+    isEndOfBlock(
+        Instruction _instr
+    );
+    bool
     executeBlock(
         BasicBlockInfo *_block
+    );
+
+    void
+    executeFunction(
+        BasicBlockInfo *_entrypoint
     );
 
     void
@@ -96,6 +112,19 @@ public:
 
     uint32_t m_eip;
 
+    BasicBlockInfo *
+    getBlockAt(
+            uint32_t _offset
+        ) {
+        auto item = m_basicBlocks->find(_offset);
+        if (item == m_basicBlocks->end()) return 0;
+
+        BasicBlockInfo *t = &item->second;
+        return t;
+    }
+
+    std::map<uint32_t, BasicBlockInfo> *m_basicBlocks;
+
 private:
     bytes *m_byteCodeRuntimeRef;
     // uint32_t m_jmpFlag;
@@ -103,6 +132,7 @@ private:
     vector<StackRegister> m_stack;
     bytes m_data;
     std::map<uint32_t, StackRegister> m_memStorage;
+    std::map<uint32_t, BasicBlockInfo> *m_plistbasicBlockInfo;
     u256 m_caller = 0xdeadbeef;
 
     int m_depthLevel = 1;
@@ -142,19 +172,19 @@ public:
         void
     );
 
+    static
     string
     getDismangledRegisterName(
         StackRegister *first
     );
 
 
+    vector<StackRegister> m_stack;
 private:
     Instruction m_instr;
     InstructionInfo m_info;
     Statement m_stmt;
     string m_exp;
-
-    vector<StackRegister> m_stack;
 
 };
 

@@ -71,26 +71,42 @@ VMState::getDepth(
 }
 
 void
+displayStack(
+    vector<StackRegister> *stack
+) {
+    int regIndex = 0;
+
+    for (auto it = stack->begin(); it != stack->end(); ++it) {
+        u256 data = it->value;
+        printf("%08X: ", regIndex);
+        std::cout << std::setfill('0') << std::setw(64) << std::hex << data;
+
+        printf(" ");
+        printf("%s", it->type & UserInput ? "U" : "-");
+        printf("%s", it->type & UserInputTainted ? "T" : "-");
+        printf("%s", it->type & Constant ? "C" : "-");
+        printf("%s", it->type & ConstantComputed ? "X" : "-");
+        printf("%s", it->type & RegTypeLabelCaller ? "L" : "-");
+        printf("%s", it->type & RegTypeLabelBlockHash ? "B" : "-");
+        printf("%s", it->type & RegTypeLabelSha3 ? "3" : "-");
+        printf("%s", it->type & StorageType ? "S" : "-");
+        printf("%s", it->type & RegTypeFlag ? "F" : "-");
+
+        printf(" [name = %s]", it->name.c_str());
+        printf(" [exp = %s]", it->exp.c_str());
+        printf("\n");
+
+        regIndex++;
+    }
+}
+
+void
 VMState::displayStack(
     void
 ) {
     printf("EIP: 0x%x STACK: \n", m_eip);
 
-    int regIndex = 0;
-
-    for (auto it = m_stack.begin(); it != m_stack.end(); ++it) {
-        u256 data = it->value;
-        printf("%08X: ", regIndex);
-        std::cout << std::setfill('0') << std::setw(64) << std::hex << data;
-
-        printf(" %s", it->type & UserInput ? "(U)" : "");
-        printf(" %s", it->type & UserInputTainted ? "(T)" : "");
-
-        printf(" [name = %s]", it->name.c_str());
-        printf("\n");
-
-        regIndex++;
-    }
+    ::displayStack(&m_stack);
 }
 
 void
@@ -201,6 +217,11 @@ VMState::executeInstruction(
             setMemoryData(offset, GetStackEntryById(1));
             popStack();
             popStack();
+
+            stringstream argname;
+            argname << "mem_";
+            argname << std::hex << offset;
+            m_stack[0].name = argname.str();
         }
         break;
         case Instruction::SSTORE:
@@ -394,6 +415,7 @@ VMState::executeInstruction(
         case Instruction::ISZERO:
         {
             m_stack[0].value = (m_stack[0].value == 0);
+            m_stack[0].type = RegTypeFlag;
             break;
         }
         case Instruction::JUMP:
@@ -493,7 +515,7 @@ VMState::executeInstruction(
     }
 
     // if (g_VerboseLevel >= 4) displayStack();
-
+    if (m_stack.size()) m_stack[0].lastModificationPC = m_eip;
     m_eip += sizeof(Instruction) + info.additional;
 
     return true;
@@ -537,20 +559,104 @@ VMState::getMemoryData(
     return 0;
 }
 
-void
+bool
+VMState::isEndOfBlock(
+    Instruction _instr
+) {
+
+    switch (_instr) {
+        case Instruction::JUMP:
+        case Instruction::JUMPI:
+        case Instruction::SUICIDE:
+        case Instruction::RETURN:
+        case Instruction::STOP:
+        case Instruction::INVALID:
+            return true;
+        break;
+    }
+
+    return false;
+}
+
+bool
 VMState::executeBlock(
     BasicBlockInfo *_block
 ) {
-    VMState current = *this;
+    // if (_block->visited) return false;
 
-    current.m_eip = _block->offset;
+    // VMState current = *this;
+
+    m_eip = _block->offset;
+    if (g_VerboseLevel >= 2) {
+        printf("%s: block(id = %d, offset = 0x%x, size = 0x%d)\n", __FUNCTION__, _block->id, _block->offset, _block->size);
+        for (uint32_t i = 0; i < 32; i++) {
+            if (_block->dominators & (1 << i)) {
+                printf("%s: dominators: ", __FUNCTION__);
+                if (_block->dominators & (1 << i)) {
+                    printf("%d", i);
+                }
+                printf("\n");
+            }
+        }
+    }
 
     for (auto opcde = _block->instructions.begin(); opcde != _block->instructions.end(); ++opcde) {
 
-        // InstructionContext instrCxt(opcde->offInfo.inst, current.m_stack);
-        
+        // resolve expression
+        InstructionContext instrCxt(opcde->offInfo.inst, m_stack);
+        instrCxt.getCurrentExpression();
         if (g_SingleStepping || (g_VerboseLevel >= 2)) porosity::printInstruction(opcde->offInfo.offset, opcde->offInfo.inst, opcde->offInfo.data);
+        opcde->stack = instrCxt.m_stack; // make sure to save the stack for each instruction
+        m_stack = opcde->stack;
+
+        if (isEndOfBlock(opcde->offInfo.inst)) {
+            if (opcde->offInfo.inst == Instruction::JUMP) {
+                if ((opcde->stack[0].value != _block->dstDefault) || (_block->dstDefault == int(NODE_DEADEND))) {
+                    uint32_t newDest = int(opcde->stack[0].value);
+                    printf("ERR: Invalid destionation. (0x%08X -> 0x%08X)\n", _block->dstDefault, newDest);
+                    _block->dstDefault = newDest;
+                    _block->nextDefault = getBlockAt(newDest);
+                }
+            }
+            else if (opcde->offInfo.inst == Instruction::JUMPI) {
+                if (opcde->stack[0].value != _block->dstJUMPI) {
+                    uint32_t newDest = int(opcde->stack[0].value);
+                    printf("ERR: Invalid destionation. (0x%08X -> 0x%08X)\n", _block->dstJUMPI, newDest);
+                    _block->dstJUMPI = newDest;
+                    _block->nextJUMPI = getBlockAt(newDest);
+                }
+            }
+        }
         bool ret = executeInstruction(opcde->offInfo.offset, opcde->offInfo.inst, opcde->offInfo.data);
+    }
+
+    _block->visited = true;
+
+    return true;
+}
+
+void
+VMState::executeFunction(
+    BasicBlockInfo *_entrypoint
+) {
+    // Execute current block and the branches.
+    BasicBlockInfo *block = _entrypoint;
+    if (!block) return;
+
+    while (true) {
+        if (!executeBlock(block)) break;
+
+        if (block->dstJUMPI) {
+            BasicBlockInfo *next = block->nextJUMPI;
+
+            VMState state = *this;
+            state.m_depthLevel++;
+            state.m_eip = block->dstJUMPI;
+            state.executeFunction(next);
+        }
+
+        block = block->nextDefault;
+        if (!block) break;
     }
 }
 
@@ -612,11 +718,11 @@ bool
 InstructionContext::getCurrentExpression(
     void
 ) {
-    m_exp = getContextForInstruction();
-
-    if (m_exp.size()) {
-        if (g_VerboseLevel >= 3) printf("%s: ", __FUNCTION__);
-        if (g_VerboseLevel >= 2) printf("%s\n", m_exp.c_str());
+    if (getContextForInstruction()) {
+        if (m_exp.size()) {
+            if (g_VerboseLevel >= 3) printf("%s: ", __FUNCTION__);
+            if (g_VerboseLevel >= 2) printf("%s\n", m_exp.c_str());
+        }
     }
 
     return true;
@@ -629,9 +735,12 @@ InstructionContext::getContextForInstruction(
     string exp;
 
     Instruction instr = m_instr;
-    StackRegister *first = &m_stack[0];
-    StackRegister *second = &m_stack[1];
-    StackRegister *third = &m_stack[2];
+    StackRegister *first = 0;
+    if (m_stack.size() > 0) first = &m_stack[0];
+    StackRegister *second = 0;
+    if (m_stack.size() > 1) second = &m_stack[1];
+    StackRegister *third = 0;
+    if (m_stack.size() > 2) third = &m_stack[2];
 
     switch (m_instr) {
         case Instruction::CALLDATALOAD:
@@ -679,6 +788,12 @@ InstructionContext::getContextForInstruction(
                 if (!IsConstant(first))
                     exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
             }
+
+            string op;
+
+            op = getDismangledRegisterName(first) + " " + operation[index] + " " + getDismangledRegisterName(second);
+            first->exp = op;
+
             break;
         }
         case Instruction::LT:

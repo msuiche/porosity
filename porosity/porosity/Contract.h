@@ -181,6 +181,11 @@ public:
     );
 
     // Blocks
+    void
+    decompile(
+        uint32_t _hash
+    );
+
     bool
     StructureIfElse(
         BasicBlockInfo *_block
@@ -212,7 +217,7 @@ public:
     );
 
     void
-    Contract::assignXrefToBlocks(
+    assignXrefToBlocks(
         void
     );
 
