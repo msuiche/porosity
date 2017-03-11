@@ -184,7 +184,6 @@ public:
 private:
     Instruction m_instr;
     InstructionInfo m_info;
-    Statement m_stmt;
     string m_exp;
 
 };

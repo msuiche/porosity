@@ -38,10 +38,9 @@ namespace pt = boost::property_tree;
 
 #include "SHA3.h"
 #include "PorosityDefs.h"
-
-#include "Statement.h"
 #include "Disassm.h"
 #include "VMState.h"
+#include "Statement.h"
 #include "Contract.h"
 #include "Utils.h"
 #include "Debug.h"

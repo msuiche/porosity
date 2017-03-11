@@ -17,6 +17,7 @@ Revision History:
 
 #include "Porosity.h"
 
+#define DEPTH(x) for (uint32_t i = 0; i < x; i++) printf("   ");
 using namespace std;
 using namespace dev;
 using namespace dev::eth;
@@ -338,7 +339,7 @@ Contract::addInstructionsToBlocks(
 
         uint32_t index_start = getInstructionIndexAtOffset(off_start);
         uint32_t index_end = getInstructionIndexAtOffset(off_end);
-        printf("Instruction Copy (start = 0x%x, end = 0x%x)\n", off_start, off_end);
+        if (g_VerboseLevel > 2) printf("Instruction Copy (start = 0x%x, end = 0x%x)\n", off_start, off_end);
         while (index_start < index_end) {
             InstructionState instState;
             instState.offInfo = m_instructions[index_start];
@@ -877,31 +878,109 @@ Contract::StructureIfElse(
     return true;
 }
 
-bool
+Statement
 Contract::StructureIfs(
     BasicBlockInfo *_block
 )
 {
-    if (getBlockSuccessorsCount(_block) != 2) return false;
+    Statement ifStmt(StatementIf);
+
+    if (getBlockSuccessorsCount(_block) != 2) return ifStmt;
 
     BasicBlockInfo *trueBlock = getBlockAt(_block->dstJUMPI);
     BasicBlockInfo *falseBlock = getBlockAt(_block->dstDefault);
 
     if ((getBlockSuccessorsCount(trueBlock) != 1) || (getBlockSuccessorsCount(falseBlock) != 1)) {
-        return false;
+        return ifStmt;
     }
 
-    if ((getBlockSuccessorsCount(trueBlock) == 1) && 
-        (trueBlock->dstDefault == _block->dstDefault)) {
-        Statement ifStmt(StatementIf);
-        //ifStmt.setCondition(_block->condAttr);
-        ifStmt.NegateCondition();
+    uint32_t falseLocation = _block->dstDefault;
 
-        ifStmt.setBlocks(trueBlock, 0);
-        return true;
+    if ((_block->nextDefault->instructions.size() == 2) && 
+        (_block->nextDefault->instructions[1].offInfo.inst == Instruction::JUMP)) { // PUSH/JUMP
+        falseLocation = _block->nextDefault->dstDefault;
+        falseBlock = _block->nextDefault->nextDefault;
     }
 
-    return false;
+    if ((getBlockSuccessorsCount(trueBlock) == 1) /*&& 
+        (trueBlock->dstDefault == falseLocation)*/) {
+        for each(auto instrState in _block->instructions) {
+            ifStmt.setCondition(instrState);
+        }
+        // ifStmt.NegateCondition();
+        ifStmt.setBlocks(trueBlock, falseBlock);
+        // ifStmt.print();
+        ifStmt.setValid();
+        // return ifStmt;
+        return ifStmt;
+    }
+
+    return ifStmt;
+}
+
+bool
+Contract::decompileBlock(
+    uint32_t _depth,
+    BasicBlockInfo *_block
+) {
+    bool result = true;
+
+    for (auto i = _block->instructions.begin();
+        i != _block->instructions.end();
+        ++i) {
+        string name = "";
+        if (i->stack.size()) name = InstructionContext::getDismangledRegisterName(&i->stack[0]);
+        if (g_VerboseLevel > 5) {
+            printf("0x%08x: %s [%s]\n", i->offInfo.offset, i->offInfo.instInfo.name.c_str(), name.c_str());
+            displayStack(&i->stack);
+            getchar();
+        }
+
+        string exp;
+        switch (i->offInfo.inst) {
+        case Instruction::MLOAD:
+            break;
+        case Instruction::MSTORE:
+        {
+            auto next = i + 1;
+            if (i->stack[1].exp.size()) exp = next->stack[0].name + " = " + i->stack[1].exp + ";";
+            // displayStack(&i->stack);
+            break;
+        }
+        case Instruction::SLOAD:
+            // exp = "store[" + i->stack[0].name + "] ? " + i->stack[1].exp + ";";
+            // displayStack(&i->stack);
+            break;
+        case Instruction::SSTORE:
+        {
+            exp = "store[" + i->stack[0].name + "] = " + i->stack[1].exp + ";";
+            break;
+        }
+        case Instruction::RETURN:
+            exp = "return " + i->stack[0].name + ";";
+            result = false;
+            break;
+        case Instruction::STOP:
+            exp = "return;";
+            result = false;
+            break;
+        }
+        if (exp.size()) {
+            DEPTH(_depth);
+            printf("%s\n", exp.c_str());
+        }
+    }
+
+    Statement s = StructureIfs(_block);
+    if (s.isValid()) {
+        DEPTH(_depth);
+        printf("%s {\n", s.getStatementStr().c_str());
+        decompileBlock(_depth + 1, _block->nextJUMPI);
+        DEPTH(_depth); 
+        printf("}\n");
+    }
+
+    return result;
 }
 
 void
@@ -911,55 +990,20 @@ Contract::decompile(
     uint32_t offset = getFunctionOffset(_hash);
     if (!offset) return;
 
-    printf("function: %s\n", getFunctionName(_hash).c_str());
+    printf("\nfunction %s {\n", getFunctionName(_hash).c_str());
 
     VMState newState = m_vmState;
     newState.m_basicBlocks = &m_listbasicBlockInfo;
 
     BasicBlockInfo *block = getBlockAt(offset);
     newState.executeFunction(block); // get stack status
+    computeDominators();
 
     do {
-        for (auto i = block->instructions.begin();
-                  i != block->instructions.end();
-                  ++i) {
-            string name = "";
-            if (i->stack.size()) name = InstructionContext::getDismangledRegisterName(&i->stack[0]);
-            if (g_VerboseLevel > 5) {
-                printf("0x%08x: %s [%s]\n", i->offInfo.offset, i->offInfo.instInfo.name.c_str(), name.c_str());
-                displayStack(&i->stack);
-                getchar();
-            }
-
-            string exp;
-            switch (i->offInfo.inst) {
-                case Instruction::MLOAD:
-                break;
-                case Instruction::MSTORE:
-                {
-                    auto next = i + 1;
-                    exp = next->stack[0].name + " = " + i->stack[1].exp + ";";
-                    break;
-                }
-                case Instruction::SLOAD:
-                break;
-                case Instruction::SSTORE:
-                {
-                    auto next = i + 1;
-                    exp = next->stack[0].name + " = " + i->stack[1].exp + ";";
-                    break;
-                }
-                case Instruction::RETURN:
-                    exp = "return " + i->stack[0].name + ";";
-                break;
-            }
-            if (exp.size()) printf("%s\n", exp.c_str());
-        }
-
-        if (block->nextJUMPI) {
-            printf("IF STATEMENT\n");
-        }
+        decompileBlock(2, block);
 
         block = block->nextDefault;
     } while (block);
+
+    printf("}\n");
 }

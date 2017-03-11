@@ -191,7 +191,7 @@ public:
         BasicBlockInfo *_block
     );
 
-    bool
+    Statement
     StructureIfs(
         BasicBlockInfo *_block
     );
@@ -219,6 +219,12 @@ public:
     void
     assignXrefToBlocks(
         void
+    );
+
+    bool
+    decompileBlock(
+        uint32_t _depth,
+        BasicBlockInfo *_block
     );
 
 private:

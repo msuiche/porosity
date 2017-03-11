@@ -831,7 +831,7 @@ InstructionContext::getContextForInstruction(
 
             first->exp = exp;
             // first->instr = instr;
-            m_stmt.setCondition(instr);
+            // m_stmt.setCondition(instr);
 
             if (g_VerboseLevel >= 6) {
                 exp = first->name;
@@ -853,7 +853,7 @@ InstructionContext::getContextForInstruction(
             else cond = getDismangledRegisterName(first);
             exp = "(!(" + cond + "))";
 
-            m_stmt.setCondition(instr);
+            // m_stmt.setCondition(instr);
 
             first->exp = exp;
             if (g_VerboseLevel >= 6) {
