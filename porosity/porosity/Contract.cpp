@@ -911,6 +911,8 @@ Contract::decompile(
     uint32_t offset = getFunctionOffset(_hash);
     if (!offset) return;
 
+    printf("function: %s\n", getFunctionName(_hash).c_str());
+
     VMState newState = m_vmState;
     newState.m_basicBlocks = &m_listbasicBlockInfo;
 
@@ -923,9 +925,11 @@ Contract::decompile(
                   ++i) {
             string name = "";
             if (i->stack.size()) name = InstructionContext::getDismangledRegisterName(&i->stack[0]);
-            printf("0x%08x: %s [%s]\n", i->offInfo.offset, i->offInfo.instInfo.name.c_str(), name.c_str());
-
-            displayStack(&i->stack);
+            if (g_VerboseLevel > 5) {
+                printf("0x%08x: %s [%s]\n", i->offInfo.offset, i->offInfo.instInfo.name.c_str(), name.c_str());
+                displayStack(&i->stack);
+                getchar();
+            }
 
             string exp;
             switch (i->offInfo.inst) {
@@ -940,12 +944,16 @@ Contract::decompile(
                 case Instruction::SLOAD:
                 break;
                 case Instruction::SSTORE:
-                break;
+                {
+                    auto next = i + 1;
+                    exp = next->stack[0].name + " = " + i->stack[1].exp + ";";
+                    break;
+                }
                 case Instruction::RETURN:
                     exp = "return " + i->stack[0].name + ";";
                 break;
             }
-            printf("%s\n", exp.c_str());
+            if (exp.size()) printf("%s\n", exp.c_str());
         }
 
         if (block->nextJUMPI) {

@@ -38,7 +38,8 @@ public:
     executeInstruction(
         uint32_t _offset,
         Instruction _instr,
-        u256 const& _data
+        u256 const& _data,
+        bool permission2Fork
     );
 
     void

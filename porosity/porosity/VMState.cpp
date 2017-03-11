@@ -129,7 +129,8 @@ bool
 VMState::executeInstruction(
     uint32_t _offset,
     Instruction _instr,
-    u256 const& _data
+    u256 const& _data,
+    bool permission2Fork
 ) {
     InstructionInfo info = dev::eth::instructionInfo(_instr);
 
@@ -432,35 +433,37 @@ VMState::executeInstruction(
             popStack();
             popStack();
 
-            if (cond) {
-                if (g_VerboseLevel > 4) printf("**** FORK BEGIN****\n");
-                // We force the opposite condition for discovery.
-                // requires additional coverage.
-                VMState state = *this;
-                state.m_depthLevel++;
-                bytes subBlock(m_byteCodeRuntimeRef->begin(), m_byteCodeRuntimeRef->end()); 
-                state.m_eip = nextInstr;
-                state.executeByteCode(&subBlock);
+            if (permission2Fork) {
+                if (cond) {
+                    if (g_VerboseLevel > 4) printf("**** FORK BEGIN****\n");
+                    // We force the opposite condition for discovery.
+                    // requires additional coverage.
+                    VMState state = *this;
+                    state.m_depthLevel++;
+                    bytes subBlock(m_byteCodeRuntimeRef->begin(), m_byteCodeRuntimeRef->end());
+                    state.m_eip = nextInstr;
+                    state.executeByteCode(&subBlock);
 
-                // Resume execution.
-                if (g_VerboseLevel > 4) printf("**** FORK END****\n");
-                m_eip = jmpTarget;
-                return true;
-            }
-            else {
-                if (g_VerboseLevel > 4) printf("**** FORK BEGIN****\n");
-                // We force the opposite condition for discovery.
-                // requires additional coverage.
-                VMState state = *this;
-                state.m_depthLevel++;
-                bytes subBlock(m_byteCodeRuntimeRef->begin(), m_byteCodeRuntimeRef->end());
-                state.m_eip = jmpTarget;
-                state.executeByteCode(&subBlock);
+                    // Resume execution.
+                    if (g_VerboseLevel > 4) printf("**** FORK END****\n");
+                    m_eip = jmpTarget;
+                    return true;
+                }
+                else {
+                    if (g_VerboseLevel > 4) printf("**** FORK BEGIN****\n");
+                    // We force the opposite condition for discovery.
+                    // requires additional coverage.
+                    VMState state = *this;
+                    state.m_depthLevel++;
+                    bytes subBlock(m_byteCodeRuntimeRef->begin(), m_byteCodeRuntimeRef->end());
+                    state.m_eip = jmpTarget;
+                    state.executeByteCode(&subBlock);
 
-                // resume execution.
-                if (g_VerboseLevel > 4) printf("**** FORK END****\n");
-                m_eip = nextInstr;
-                return true;
+                    // resume execution.
+                    if (g_VerboseLevel > 4) printf("**** FORK END****\n");
+                    m_eip = nextInstr;
+                    return true;
+                }
             }
             break;
         }
@@ -582,12 +585,13 @@ bool
 VMState::executeBlock(
     BasicBlockInfo *_block
 ) {
+    bool result = true;
     // if (_block->visited) return false;
 
     // VMState current = *this;
 
     m_eip = _block->offset;
-    if (g_VerboseLevel >= 2) {
+    if (g_VerboseLevel >= 3) {
         printf("%s: block(id = %d, offset = 0x%x, size = 0x%d)\n", __FUNCTION__, _block->id, _block->offset, _block->size);
         for (uint32_t i = 0; i < 32; i++) {
             if (_block->dominators & (1 << i)) {
@@ -611,28 +615,43 @@ VMState::executeBlock(
 
         if (isEndOfBlock(opcde->offInfo.inst)) {
             if (opcde->offInfo.inst == Instruction::JUMP) {
+                if (!_block->dstDefault) {
+                    result = false;
+                    break;
+                }
+
                 if ((opcde->stack[0].value != _block->dstDefault) || (_block->dstDefault == int(NODE_DEADEND))) {
                     uint32_t newDest = int(opcde->stack[0].value);
-                    printf("ERR: Invalid destionation. (0x%08X -> 0x%08X)\n", _block->dstDefault, newDest);
+                    if (g_VerboseLevel >= 2) printf("ERR: Invalid destionation. (0x%08X -> 0x%08X)\n", _block->dstDefault, newDest);
                     _block->dstDefault = newDest;
                     _block->nextDefault = getBlockAt(newDest);
                 }
             }
             else if (opcde->offInfo.inst == Instruction::JUMPI) {
+                if (!_block->dstJUMPI) {
+                    result = false;
+                    break;
+                }
+
                 if (opcde->stack[0].value != _block->dstJUMPI) {
                     uint32_t newDest = int(opcde->stack[0].value);
-                    printf("ERR: Invalid destionation. (0x%08X -> 0x%08X)\n", _block->dstJUMPI, newDest);
+                    if (g_VerboseLevel >= 2) printf("ERR: Invalid destionation. (0x%08X -> 0x%08X)\n", _block->dstJUMPI, newDest);
                     _block->dstJUMPI = newDest;
                     _block->nextJUMPI = getBlockAt(newDest);
                 }
             }
+            else {
+                result = false;
+                break;
+            }
         }
-        bool ret = executeInstruction(opcde->offInfo.offset, opcde->offInfo.inst, opcde->offInfo.data);
+
+        bool ret = executeInstruction(opcde->offInfo.offset, opcde->offInfo.inst, opcde->offInfo.data, false);
     }
 
     _block->visited = true;
 
-    return true;
+    return result;
 }
 
 void
@@ -699,7 +718,7 @@ VMState::executeByteCode(
             instrCxt.printExpression();
         }
 
-        bool ret = executeInstruction(offset, instr, data);
+        bool ret = executeInstruction(offset, instr, data, true);
         if (g_SingleStepping) {
             printf("AFTER:\n");
             displayStack();
