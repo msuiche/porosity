@@ -17,7 +17,6 @@ Revision History:
 
 #include "Porosity.h"
 
-#define DEPTH(x) for (uint32_t i = 0; i < x; i++) printf("   ");
 using namespace std;
 using namespace dev;
 using namespace dev::eth;
@@ -921,6 +920,7 @@ Contract::StructureIfs(
 
 bool
 Contract::decompileBlock(
+    SourceCode *decompiled_code,
     uint32_t _depth,
     BasicBlockInfo *_block
 ) {
@@ -930,6 +930,8 @@ Contract::decompileBlock(
         i != _block->instructions.end();
         ++i) {
         string name = "";
+        uint32_t errCode = DCode_OK;
+
         if (i->stack.size()) name = InstructionContext::getDismangledRegisterName(&i->stack[0]);
         if (g_VerboseLevel > 5) {
             printf("0x%08x: %s [%s]\n", i->offInfo.offset, i->offInfo.instInfo.name.c_str(), name.c_str());
@@ -955,6 +957,7 @@ Contract::decompileBlock(
         case Instruction::SSTORE:
         {
             exp = "store[" + i->stack[0].name + "] = " + InstructionContext::getDismangledRegisterName(&i->stack[1]) + ";";
+            if (_block->Flags & BlockFlags::NoMoreSSTORE) errCode |= DCode_Err_ReetrantVulnerablity;
             break;
         }
         case Instruction::RETURN:
@@ -967,18 +970,22 @@ Contract::decompileBlock(
             break;
         }
         if (exp.size()) {
-            DEPTH(_depth);
-            printf("%s\n", exp.c_str());
+            //DEPTH(_depth);
+            //printf("%s\n", exp.c_str());
+            decompiled_code->append(_depth, exp);
+            if (errCode) decompiled_code->setErrCode(errCode);
         }
     }
 
     Statement s = StructureIfs(_block);
     if (s.isValid()) {
-        DEPTH(_depth);
-        printf("%s {\n", s.getStatementStr().c_str());
-        decompileBlock(_depth + 1, _block->nextJUMPI);
-        DEPTH(_depth); 
-        printf("}\n");
+        //DEPTH(_depth);
+        //printf("%s {\n", s.getStatementStr().c_str());
+        decompiled_code->append(_depth, s.getStatementStr() + " {");
+        decompileBlock(decompiled_code, _depth + 1, _block->nextJUMPI);
+        //DEPTH(_depth); 
+        //printf("}\n");
+        decompiled_code->append(_depth, "}");
     }
 
     return result;
@@ -991,7 +998,10 @@ Contract::decompile(
     uint32_t offset = getFunctionOffset(_hash);
     if (!offset) return;
 
-    printf("\nfunction %s {\n", getFunctionName(_hash).c_str());
+    SourceCode decompiled_code;
+
+    //printf("\nfunction %s {\n", getFunctionName(_hash).c_str());
+    decompiled_code.append(0, "function " + getFunctionName(_hash) + " {");
 
     VMState newState = m_vmState;
     newState.m_basicBlocks = &m_listbasicBlockInfo;
@@ -1001,10 +1011,14 @@ Contract::decompile(
     computeDominators();
 
     do {
-        decompileBlock(2, block);
+        decompileBlock(&decompiled_code, 2, block);
 
         block = block->nextDefault;
     } while (block);
 
-    printf("}\n");
+    decompiled_code.append(0, "}");
+    // printf("}\n");
+
+    decompiled_code.print();
+    printf("LOC: %d\n", decompiled_code.loc());
 }

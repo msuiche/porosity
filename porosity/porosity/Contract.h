@@ -223,6 +223,7 @@ public:
 
     bool
     decompileBlock(
+        SourceCode *decompiled_code,
         uint32_t _depth,
         BasicBlockInfo *_block
     );

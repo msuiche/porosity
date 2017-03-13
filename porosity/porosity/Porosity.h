@@ -32,6 +32,7 @@ Revision History:
 #include "Common.h"
 #include "CommonData.h"
 #include "Assert.h"
+#include "Output.h"
 
 using namespace std;
 namespace pt = boost::property_tree;

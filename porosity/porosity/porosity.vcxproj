@@ -148,6 +148,7 @@
     <ClCompile Include="CommonData.cpp" />
     <ClCompile Include="Contract.cpp" />
     <ClCompile Include="Debug.cpp" />
+    <ClCompile Include="Output.cpp" />
     <ClCompile Include="Statement.cpp" />
     <ClCompile Include="Instruction.cpp" />
     <ClCompile Include="Porosity.cpp" />
@@ -158,6 +159,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assert.h" />
+    <ClInclude Include="Output.h" />
     <ClInclude Include="PorosityDefs.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="CommonData.h" />

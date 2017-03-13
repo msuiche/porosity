@@ -703,6 +703,15 @@ VMState::executeBlock(
             }
         }
 
+        // Flags
+        switch (opcde->offInfo.inst) {
+            case Instruction::CALL:
+            {
+                _block->InheritFlags |= NoMoreSSTORE;
+                break;
+            }
+        }
+
         bool ret = executeInstruction(opcde->offInfo.offset, opcde->offInfo.inst, opcde->offInfo.data, false);
     }
 
@@ -721,9 +730,12 @@ VMState::executeFunction(
 
     while (true) {
         if (!executeBlock(block)) break;
+        uint32_t inheritFlags = block->InheritFlags;
 
         if (block->dstJUMPI) {
             BasicBlockInfo *next = block->nextJUMPI;
+            next->Flags |= inheritFlags;
+            next->InheritFlags |= inheritFlags;
 
             VMState state = *this;
             state.m_depthLevel++;
@@ -733,6 +745,8 @@ VMState::executeFunction(
 
         block = block->nextDefault;
         if (!block) break;
+        block->Flags |= inheritFlags;
+        block->InheritFlags |= inheritFlags;
     }
 }
 
