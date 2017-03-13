@@ -377,6 +377,7 @@ Contract::walkAndConnectNodes(
     uint32_t next = _block;
     while (true) {
         auto block = m_listbasicBlockInfo.find(next);
+        if (block == m_listbasicBlockInfo.end()) break;
         next = block->second.dstDefault;
 
         if (block->second.dstJUMPI) {
@@ -953,7 +954,7 @@ Contract::decompileBlock(
             break;
         case Instruction::SSTORE:
         {
-            exp = "store[" + i->stack[0].name + "] = " + i->stack[1].exp + ";";
+            exp = "store[" + i->stack[0].name + "] = " + InstructionContext::getDismangledRegisterName(&i->stack[1]) + ";";
             break;
         }
         case Instruction::RETURN:

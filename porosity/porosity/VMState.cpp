@@ -216,12 +216,19 @@ VMState::executeInstruction(
         {
             uint32_t offset = int(GetStackEntryById(0).value);
             setMemoryData(offset, GetStackEntryById(1));
+            stringstream argname;
+
+            if (GetStackEntryById(1).type & StorageType) {
+                argname << GetStackEntryById(1).name;
+            }
+            else {
+                argname << "memory[0x";
+                argname << std::hex << offset;
+                argname << "]";
+            }
             popStack();
             popStack();
 
-            stringstream argname;
-            argname << "mem_";
-            argname << std::hex << offset;
             m_stack[0].name = argname.str();
         }
         break;
@@ -233,11 +240,17 @@ VMState::executeInstruction(
         case Instruction::MLOAD:
         {
             uint32_t offset = int(GetStackEntryById(0).value);
+            StackRegister *reg = getMemoryData(offset);
             stringstream argname;
-            argname << "memory[0x";
-            argname << std::hex << offset;
-            argname << "]";
-            GetStackEntryById(0).name = argname.str();
+            if (reg && reg->type & StorageType) {
+                GetStackEntryById(0).name = reg->name;
+            }
+            else {
+                argname << "memory[0x";
+                argname << std::hex << offset;
+                argname << "]";
+                GetStackEntryById(0).name = argname.str();
+            }
         }
         break;
         case Instruction::SLOAD:
@@ -265,6 +278,40 @@ VMState::executeInstruction(
             //GetStackEntryById(0).value = u256(dev::keccak256(GetStackEntryById(0).value));
             GetStackEntryById(0) = *getMemoryData(offset);
             m_stack[0].type = RegTypeLabelSha3;
+            break;
+        }
+        case Instruction::CALL:
+        {
+            if (m_stack.size() < 6) {
+                printf("*** ERROR *** STACK UNDERFLOW (%d elements < 6)\n", m_stack.size());
+                return false;
+            }
+            // Stack[0] = gas limit (default = 0x2540B5EF0)
+            // Stack[1] = caller (e.g. msg.sender)
+            // Stack[2] = value
+            // Stack[3]
+            // Stack[4]
+            // Stack[5]
+
+            stringstream exp;
+            if (GetStackEntryById(1).type & RegTypeLabelCaller) exp << GetStackEntryById(1).name;
+            else exp << std::hex << GetStackEntryById(1).value;
+            exp << ".call";
+            if (GetStackEntryById(0).value != 0x2540B5EF0) exp << ".gas(" << GetStackEntryById(0).value << ")";
+            exp << ".value(" << GetStackEntryById(2).name << ")";
+            exp << "()";
+
+            popStack();
+            popStack();
+            popStack();
+            popStack();
+            popStack();
+            popStack();
+
+            GetStackEntryById(0).exp = exp.str();
+            GetStackEntryById(0).type = CallReturnStatus;
+            GetStackEntryById(0).name = "result";
+            GetStackEntryById(0).value = false; // always failing.
             break;
         }
         case Instruction::LOG0:
@@ -374,6 +421,7 @@ VMState::executeInstruction(
             if (IsMasking160bitsAddress(&GetStackEntryById(0))) {
                 // mask for address. type discovery.
                 m_stack[0].type = m_stack[1].type; // copy mask to result.
+                // m_stack[0].type &= AddressType;
                 m_stack[0].name = m_stack[1].name;
             }
 
@@ -413,6 +461,15 @@ VMState::executeInstruction(
             // m_jmpFlag = int(m_stack[1].value);
             popStack();
             break;
+        case Instruction::GAS:
+        {
+            StackRegister reg = { "", "", GasLimit, 0, 0 };
+            reg.value = 0x2540be3f2;
+            reg.type = GasLimit;
+            reg.name = "gaslimit";
+            pushStack(reg);
+            break;
+        }
         case Instruction::ISZERO:
         {
             m_stack[0].value = (m_stack[0].value == 0);
@@ -851,7 +908,8 @@ InstructionContext::getContextForInstruction(
             string cond;
             if (first->exp.size()) cond = first->exp;
             else cond = getDismangledRegisterName(first);
-            exp = "(!(" + cond + "))";
+            // exp = "(!(" + cond + "))";
+            exp = cond;
 
             // m_stmt.setCondition(instr);
 
