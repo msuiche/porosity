@@ -16,6 +16,9 @@ Revision History:
 --*/
 #include "Porosity.h"
 
+#define SUCCESS 0
+#define FAILED 1
+
 uint32_t g_VerboseLevel = VERBOSE_LEVEL;
 bool g_SingleStepping = false;
 bytes defaultArguments = { 0xee, 0xe9, 0x72, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x45, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
@@ -164,13 +167,13 @@ int main(
     if (!parse(argc, argv, &args)) {
         header();
         help();
-        return false;
+        return FAILED;
     }
 
     if (args.debugMode) {
         header();
         debug();
-        return true;
+        return SUCCESS;
     }
 
     Contract contract(args.codeByteRuntime);
@@ -179,11 +182,11 @@ int main(
 
     if (args.method & MethodControlFlowGraph) {
         printf("%s\n", contract.getGraphviz(false).c_str());
-        return true;
+        return SUCCESS;
     }
     else if (args.method & MethodControlFlowGraphFull) {
         printf("%s\n", contract.getGraphviz(true).c_str());
-        return true;
+        return SUCCESS;
     }
 
     header();
@@ -195,13 +198,17 @@ int main(
         contract.printInstructions();
     }
     else if (args.method & MethodDecompile) {
-        contract.forEachFunction([&](uint32_t _hash) {
-            if (!args.targetHashMethod || (_hash == args.targetHashMethod)) {
-                printf("Hash: 0x%08X\n", _hash);
-                contract.getFunction(_hash);
-            }
-        });
+        if (args.targetHashMethod) contract.decompile(args.targetHashMethod);
+        else {
+            contract.forEachFunction([&](uint32_t _hash) {
+                if (!args.targetHashMethod || (_hash == args.targetHashMethod)) {
+                    printf("Hash: 0x%08X\n", _hash);
+                    // contract.getFunction(_hash);
+                    contract.decompile(_hash);
+                }
+            });
+        }
     }
 
-    return true;
+    return SUCCESS;
 }
