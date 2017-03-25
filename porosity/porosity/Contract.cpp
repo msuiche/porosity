@@ -936,7 +936,7 @@ Contract::decompileBlock(
         if (g_VerboseLevel > 5) {
             printf("0x%08x: %s [%s]\n", i->offInfo.offset, i->offInfo.instInfo.name.c_str(), name.c_str());
             displayStack(&i->stack);
-            getchar();
+            if(g_SingleStepping) getchar();
         }
 
         string exp;

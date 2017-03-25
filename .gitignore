@@ -1,1 +1,4 @@
 /porosity/porosity/Debug/*.obj
+/porosity-private
+/porosity/packages/boost-vc140.1.63.0.0
+boost.1.63.0.0
