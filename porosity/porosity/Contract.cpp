@@ -686,7 +686,10 @@ Contract::setABI(
 
     m_publicFunctions.clear();
 
+    printf("Attempting to parse ABI definition:\n");
+    printf("%s\n", abi.c_str());
     m_abi_json = nlohmann::json::parse(abi.c_str());
+    printf("Success.\n");
 
     for (nlohmann::json entry : m_abi_json) {
         string name = "";

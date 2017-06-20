@@ -477,8 +477,10 @@ VMState::executeInstruction(
             break;
         }
         case Instruction::JUMP:
-            m_eip = int(m_stack[0].value);
-            popStack();
+            if (m_stack.size()) {
+                m_eip = int(m_stack[0].value);
+                popStack();
+            }
             return true;
         break;
         case Instruction::JUMPI:
@@ -677,7 +679,7 @@ VMState::executeBlock(
                     break;
                 }
 
-                if ((opcde->stack[0].value != _block->dstDefault) || (_block->dstDefault == int(NODE_DEADEND))) {
+                if ((opcde->stack.size() && (opcde->stack[0].value != _block->dstDefault)) || (_block->dstDefault == int(NODE_DEADEND))) {
                     uint32_t newDest = int(opcde->stack[0].value);
                     if (g_VerboseLevel >= 2) printf("ERR: Invalid destionation. (0x%08X -> 0x%08X)\n", _block->dstDefault, newDest);
                     _block->dstDefault = newDest;
@@ -690,7 +692,7 @@ VMState::executeBlock(
                     break;
                 }
 
-                if (opcde->stack[0].value != _block->dstJUMPI) {
+                if ((opcde->stack.size() && opcde->stack[0].value != _block->dstJUMPI)) {
                     uint32_t newDest = int(opcde->stack[0].value);
                     if (g_VerboseLevel >= 2) printf("ERR: Invalid destionation. (0x%08X -> 0x%08X)\n", _block->dstJUMPI, newDest);
                     _block->dstJUMPI = newDest;
