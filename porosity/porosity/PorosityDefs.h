@@ -37,7 +37,7 @@ typedef enum _DErrCode {
     DCode_Warn = 0x1000,
 
     DCode_Err = 0x2000,
-    DCode_Err_ReetrantVulnerablity = 0x2001
+    DCode_Err_ReentrantVulnerablity = 0x2001
 } DErrCode;
 
 typedef enum _StatementName {
@@ -90,7 +90,8 @@ typedef enum _StackRegisterType {
 
     GasLimit = (1 << 11),
     CallReturnStatus = (1 << 12),
-    AddressType = (1 << 13)
+    AddressType = (1 << 13),
+    RegTypeLabelThis = (1 << 14)
 } StackRegisterType;
 
 // Structures

@@ -221,6 +221,12 @@ VMState::executeInstruction(
             m_stack[0] = reg;
             break;
         }
+        /*
+        case Instruction::CALLDATASIZE:
+        {
+            break;
+        }
+        */
         case Instruction::MSTORE:
         {
             uint32_t offset = int(GetStackEntryById(0).value);
@@ -303,8 +309,22 @@ VMState::executeInstruction(
             // Stack[5]
 
             stringstream exp;
-            if (GetStackEntryById(1).type & RegTypeLabelCaller) exp << GetStackEntryById(1).name;
-            else exp << std::hex << GetStackEntryById(1).value;
+            if (GetStackEntryById(1).type & RegTypeLabelCaller) {
+                exp << GetStackEntryById(1).name;
+            }
+            else {
+                switch (int(GetStackEntryById(1).value)) {
+                case 2:
+                    exp << "sha256";
+                    break;
+                case 3:
+                    exp << "ripemd160";
+                    break;
+                default:
+                    exp << std::hex << GetStackEntryById(1).value;
+                    break;
+                }
+            }
             exp << ".call";
             if (GetStackEntryById(0).value != 0x2540B5EF0) exp << ".gas(" << GetStackEntryById(0).value << ")";
             exp << ".value(" << GetStackEntryById(2).name << ")";
@@ -440,6 +460,18 @@ VMState::executeInstruction(
             popStack(); // info.ret
             break;
         }
+        case Instruction::NOT:
+        {
+            m_stack[0].value = ~m_stack[0].value;
+            break;
+        }
+        case Instruction::OR:
+        {
+            m_stack[0].value = m_stack[0].value | m_stack[1].value;
+            m_stack[1] = m_stack[0];
+            popStack(); // info.ret
+            break;
+        }
         case Instruction::EQ:
             // change name
             // change labeltype
@@ -486,6 +518,8 @@ VMState::executeInstruction(
             break;
         }
         case Instruction::JUMP:
+            printf("JUMP: stack.size() = 0x%x\n", m_stack.size());
+            printf("JUMP: target = 0x%x\n", int(m_stack[0].value));
             if (m_stack.size()) {
                 m_eip = int(m_stack[0].value);
                 popStack();
@@ -579,13 +613,31 @@ VMState::executeInstruction(
             pushStack(reg);
             break;
         }
+        case Instruction::CALLVALUE:
+        {
+            StackRegister reg = { "callvalue", "", RegTypeLabelThis, 0, 0 };
+            reg.value = u256("0x0bad1dea0bad1dea0bad1dea0bad1dea");
+            pushStack(reg);
+            break;
+        }
+        case Instruction::ADDRESS:
+        {
+            // this can send actions, check if in between brackets.
+            u256 data = _data;
+            StackRegister reg = { "", "", AddressType, 0, 0 };
+            reg.value = m_caller;
+            reg.name = "this";
+            reg.type = AddressType;
+            pushStack(reg);
+            break;
+        }
         default:
             printf("%s: NOT_IMPLEMENTED: %s\n", __FUNCTION__, info.name.c_str());
             return false;
             break;
     }
 
-    // if (g_VerboseLevel >= 4) displayStack();
+    if (g_VerboseLevel >= 4) displayStack();
     if (m_stack.size()) m_stack[0].lastModificationPC = m_eip;
     m_eip += sizeof(Instruction) + info.additional;
 
@@ -683,6 +735,7 @@ VMState::executeBlock(
 
         if (isEndOfBlock(opcde->offInfo.inst)) {
             if (opcde->offInfo.inst == Instruction::JUMP) {
+                printf("Execute basic block\n");
                 if (!_block->dstDefault) {
                     result = false;
                     break;
@@ -745,13 +798,18 @@ VMState::executeFunction(
 
         if (block->dstJUMPI) {
             BasicBlockInfo *next = block->nextJUMPI;
-            next->Flags |= inheritFlags;
-            next->InheritFlags |= inheritFlags;
+            if (next) {
+                next->Flags |= inheritFlags;
+                next->InheritFlags |= inheritFlags;
 
-            VMState state = *this;
-            state.m_depthLevel++;
-            state.m_eip = block->dstJUMPI;
-            state.executeFunction(next);
+                VMState state = *this;
+                state.m_depthLevel++;
+                state.m_eip = block->dstJUMPI;
+                state.executeFunction(next);
+            }
+            else {
+                printf("ERROR: JUMPI destination is null.\n");
+            }
         }
 
         block = block->nextDefault;
@@ -931,9 +989,11 @@ InstructionContext::getContextForInstruction(
             // m_jmpFlag = (m_stack[0].value == 0);
 
             string cond;
-            if (first->exp.size()) cond = first->exp;
-            else cond = getDismangledRegisterName(first);
-            // exp = "(!(" + cond + "))";
+            if (first) {
+                if (first->exp.size()) cond = first->exp;
+                else cond = getDismangledRegisterName(first);
+                // exp = "(!(" + cond + "))";
+            }
             exp = cond;
 
             // m_stmt.setCondition(instr);
@@ -946,6 +1006,11 @@ InstructionContext::getContextForInstruction(
                 exp = "";
             }
 
+            break;
+        }
+        case Instruction::CALLVALUE:
+        {
+            // exp = "this";
             break;
         }
         case Instruction::JUMPDEST:

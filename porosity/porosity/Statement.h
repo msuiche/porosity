@@ -87,32 +87,32 @@ public:
         switch (_instrState.offInfo.inst) {
                 case Instruction::LT:
                     m_cond = ConditionLessThan;
-                    m_op1 = _instrState.stack[0];
-                    m_op2 = _instrState.stack[1];
+                    if (_instrState.stack.size()) m_op1 = _instrState.stack[0];
+                    if (_instrState.stack.size() > 1) m_op2 = _instrState.stack[1];
                     break;
                 case Instruction::GT:
                     m_cond = ConditionGreaterThan;
-                    m_op1 = _instrState.stack[0];
-                    m_op2 = _instrState.stack[1];
+                    if (_instrState.stack.size()) m_op1 = _instrState.stack[0];
+                    if (_instrState.stack.size() > 1) m_op2 = _instrState.stack[1];
                     break;
                 case Instruction::SLT:
                     m_cond = ConditionSignedLessThan;
-                    m_op1 = _instrState.stack[0];
-                    m_op2 = _instrState.stack[1];
+                    if (_instrState.stack.size()) m_op1 = _instrState.stack[0];
+                    if (_instrState.stack.size() > 1) m_op2 = _instrState.stack[1];
                     break;
                 case Instruction::SGT:
                     m_cond = ConditionSignedGreaterThan;
-                    m_op1 = _instrState.stack[0];
-                    m_op2 = _instrState.stack[1];
+                    if (_instrState.stack.size()) m_op1 = _instrState.stack[0];
+                    if (_instrState.stack.size() > 1) m_op2 = _instrState.stack[1];
                     break;
                 case Instruction::EQ:
                     m_cond = ConditionEqual;
-                    m_op1 = _instrState.stack[0];
-                    m_op2 = _instrState.stack[1];
+                    if (_instrState.stack.size()) m_op1 = _instrState.stack[0];
+                    if (_instrState.stack.size() > 1) m_op2 = _instrState.stack[1];
                     break;
                 case Instruction::ISZERO:
                     if (m_cond == ConditionUndefined) {
-                        m_op1 = _instrState.stack[0];
+                        if (_instrState.stack.size()) m_op1 = _instrState.stack[0];
                         m_cond = ConditionIsZero;
                     }
                     else NegateCondition();
@@ -236,8 +236,8 @@ public:
                 Red("L%d (D%d):", line->line_number + 1, line->errorCode);
                 printf(" ");
                 switch (line->errorCode) {
-                    case DCode_Err_ReetrantVulnerablity:
-                        printf("Potential reetrant vulnerability found.\n");
+                    case DCode_Err_ReentrantVulnerablity:
+                        printf("Potential reentrant vulnerability found.\n");
                     break;
                 }
                 printf("\n");

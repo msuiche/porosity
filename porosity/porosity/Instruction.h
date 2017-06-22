@@ -24,7 +24,7 @@ namespace dev
     namespace eth
     {
 
-        /// Virtual machine uint8_tcode instruction.
+        /// Virtual machine bytecode instruction.
         enum class Instruction : uint8_t
         {
             STOP = 0x00,        ///< halts execution
@@ -50,7 +50,7 @@ namespace dev
             OR,                 ///< bitwise OR operation
             XOR,                ///< bitwise XOR operation
             NOT,                ///< bitwise NOT opertation
-            BYTE,               ///< retrieve single uint8_t from word
+            BYTE,               ///< retrieve single byte from word
 
             SHA3 = 0x20,        ///< compute SHA3-256 hash
 
@@ -67,6 +67,8 @@ namespace dev
             GASPRICE,           ///< get price of gas in current environment
             EXTCODESIZE,        ///< get external code size (from another contract)
             EXTCODECOPY,        ///< copy external code (from another contract)
+            RETURNDATASIZE = 0x3d,  ///< size of data returned from previous call
+            RETURNDATACOPY = 0x3e,  ///< copy data returned from previous call to memory
 
             BLOCKHASH = 0x40,   ///< get hash of most recent complete block
             COINBASE,           ///< get the block's coinbase address
@@ -75,17 +77,10 @@ namespace dev
             DIFFICULTY,         ///< get the block's difficulty
             GASLIMIT,           ///< get the block's gas limit
 
-            JUMPTO = 0x4a,      ///< alter the program counter to a jumpdest
-            JUMPIF,             ///< conditionally alter the program counter
-            JUMPV,              ///< alter the program counter to a jumpdest
-            JUMPSUB,            ///< alter the program counter to a beginsub
-            JUMPSUBV,           ///< alter the program counter to a beginsub
-            RETURNSUB,          ///< return to subroutine jumped from
-
             POP = 0x50,         ///< remove item from stack
             MLOAD,              ///< load word from memory
             MSTORE,             ///< save word to memory
-            MSTORE8,            ///< save uint8_t to memory
+            MSTORE8,            ///< save byte to memory
             SLOAD,              ///< load word from storage
             SSTORE,             ///< save word to storage
             JUMP,               ///< alter the program counter to a jumpdest
@@ -94,41 +89,39 @@ namespace dev
             MSIZE,              ///< get the size of active memory
             GAS,                ///< get the amount of available gas
             JUMPDEST,           ///< set a potential jump destination
-            BEGINSUB,           ///< set a potential jumpsub destination
-            BEGINDATA,          ///< begine the data section
 
-            PUSH1 = 0x60,       ///< place 1 uint8_t item on stack
-            PUSH2,              ///< place 2 uint8_t item on stack
-            PUSH3,              ///< place 3 uint8_t item on stack
-            PUSH4,              ///< place 4 uint8_t item on stack
-            PUSH5,              ///< place 5 uint8_t item on stack
-            PUSH6,              ///< place 6 uint8_t item on stack
-            PUSH7,              ///< place 7 uint8_t item on stack
-            PUSH8,              ///< place 8 uint8_t item on stack
-            PUSH9,              ///< place 9 uint8_t item on stack
-            PUSH10,             ///< place 10 uint8_t item on stack
-            PUSH11,             ///< place 11 uint8_t item on stack
-            PUSH12,             ///< place 12 uint8_t item on stack
-            PUSH13,             ///< place 13 uint8_t item on stack
-            PUSH14,             ///< place 14 uint8_t item on stack
-            PUSH15,             ///< place 15 uint8_t item on stack
-            PUSH16,             ///< place 16 uint8_t item on stack
-            PUSH17,             ///< place 17 uint8_t item on stack
-            PUSH18,             ///< place 18 uint8_t item on stack
-            PUSH19,             ///< place 19 uint8_t item on stack
-            PUSH20,             ///< place 20 uint8_t item on stack
-            PUSH21,             ///< place 21 uint8_t item on stack
-            PUSH22,             ///< place 22 uint8_t item on stack
-            PUSH23,             ///< place 23 uint8_t item on stack
-            PUSH24,             ///< place 24 uint8_t item on stack
-            PUSH25,             ///< place 25 uint8_t item on stack
-            PUSH26,             ///< place 26 uint8_t item on stack
-            PUSH27,             ///< place 27 uint8_t item on stack
-            PUSH28,             ///< place 28 uint8_t item on stack
-            PUSH29,             ///< place 29 uint8_t item on stack
-            PUSH30,             ///< place 30 uint8_t item on stack
-            PUSH31,             ///< place 31 uint8_t item on stack
-            PUSH32,             ///< place 32 uint8_t item on stack
+            PUSH1 = 0x60,       ///< place 1 byte item on stack
+            PUSH2,              ///< place 2 byte item on stack
+            PUSH3,              ///< place 3 byte item on stack
+            PUSH4,              ///< place 4 byte item on stack
+            PUSH5,              ///< place 5 byte item on stack
+            PUSH6,              ///< place 6 byte item on stack
+            PUSH7,              ///< place 7 byte item on stack
+            PUSH8,              ///< place 8 byte item on stack
+            PUSH9,              ///< place 9 byte item on stack
+            PUSH10,             ///< place 10 byte item on stack
+            PUSH11,             ///< place 11 byte item on stack
+            PUSH12,             ///< place 12 byte item on stack
+            PUSH13,             ///< place 13 byte item on stack
+            PUSH14,             ///< place 14 byte item on stack
+            PUSH15,             ///< place 15 byte item on stack
+            PUSH16,             ///< place 16 byte item on stack
+            PUSH17,             ///< place 17 byte item on stack
+            PUSH18,             ///< place 18 byte item on stack
+            PUSH19,             ///< place 19 byte item on stack
+            PUSH20,             ///< place 20 byte item on stack
+            PUSH21,             ///< place 21 byte item on stack
+            PUSH22,             ///< place 22 byte item on stack
+            PUSH23,             ///< place 23 byte item on stack
+            PUSH24,             ///< place 24 byte item on stack
+            PUSH25,             ///< place 25 byte item on stack
+            PUSH26,             ///< place 26 byte item on stack
+            PUSH27,             ///< place 27 byte item on stack
+            PUSH28,             ///< place 28 byte item on stack
+            PUSH29,             ///< place 29 byte item on stack
+            PUSH30,             ///< place 30 byte item on stack
+            PUSH31,             ///< place 31 byte item on stack
+            PUSH32,             ///< place 32 byte item on stack
 
             DUP1 = 0x80,        ///< copies the highest item in the stack to the top of the stack
             DUP2,               ///< copies the second highest item in the stack to the top of the stack
@@ -170,64 +163,74 @@ namespace dev
             LOG3,               ///< Makes a log entry; 3 topics.
             LOG4,               ///< Makes a log entry; 4 topics.
 
-            // !!!!!!!!!!!!!!!!
-            // these are generated by the interpreter - should never be in user code
-            PUSHC = 0xac,       ///< push value from constant pool
-            JUMPC,              ///< alter the program counter - pre-verified
-            JUMPCI,             ///< conditionally alter the program counter - pre-verified
-            BAD,                ///< placed to force invalid instruction exception
+                                // these are generated by the interpreter - should never be in user code
+                                PUSHC = 0xac,       ///< push value from constant pool
+                                JUMPC,              ///< alter the program counter - pre-verified
+                                JUMPCI,             ///< conditionally alter the program counter - pre-verified
 
-            CREATE = 0xf0,      ///< create a new account with associated code
-            CALL,               ///< message-call into an account
-            CALLCODE,           ///< message-call with another account's code only
-            RETURN,             ///< halt execution returning output data
-            DELEGATECALL,       ///< like CALLCODE but keeps caller's value and sender
-            REVERT = 0xfd,      ///< halt execution, revert state and return output data
-            INVALID = 0xfe,     ///< invalid instruction for expressing runtime errors (e.g., division-by-zero
-            SUICIDE = 0xff      ///< halt execution and register account for later deletion
+                                JUMPTO = 0xb0,      ///< alter the program counter to a jumpdest
+                                JUMPIF,             ///< conditionally alter the program counter
+                                JUMPSUB,            ///< alter the program counter to a beginsub
+                                JUMPV,              ///< alter the program counter to a jumpdest
+                                JUMPSUBV,           ///< alter the program counter to a beginsub
+                                BEGINSUB,           ///< set a potential jumpsub destination
+                                BEGINDATA,          ///< begine the data section
+                                RETURNSUB,          ///< return to subroutine jumped from
+                                PUTLOCAL,           ///< pop top of stack to local variable
+                                GETLOCAL,           ///< push local variable to top of stack
+
+                                CREATE = 0xf0,      ///< create a new account with associated code
+                                CALL,               ///< message-call into an account
+                                CALLCODE,           ///< message-call with another account's code only
+                                RETURN,             ///< halt execution returning output data
+                                DELEGATECALL,       ///< like CALLCODE but keeps caller's value and sender
+                                STATICCALL = 0xfa,	///< like CALL except state changing operation are not permitted (will throw)
+                                REVERT = 0xfd,      ///< stop execution and revert state changes, without consuming all provided gas
+                                INVALID = 0xfe,     ///< dedicated invalid instruction
+                                SUICIDE = 0xff      ///< halt execution and register account for later deletion
         };
 
         /// @returns the number of PUSH Instruction _inst
         inline unsigned getPushNumber(Instruction _inst)
         {
-            return (uint8_t)_inst - unsigned(Instruction::PUSH1) + 1;
+            return (byte)_inst - unsigned(Instruction::PUSH1) + 1;
         }
 
         /// @returns the number of DUP Instruction _inst
         inline unsigned getDupNumber(Instruction _inst)
         {
-            return (uint8_t)_inst - unsigned(Instruction::DUP1) + 1;
+            return (byte)_inst - unsigned(Instruction::DUP1) + 1;
         }
 
         /// @returns the number of SWAP Instruction _inst
         inline unsigned getSwapNumber(Instruction _inst)
         {
-            return (uint8_t)_inst - unsigned(Instruction::SWAP1) + 1;
+            return (byte)_inst - unsigned(Instruction::SWAP1) + 1;
         }
 
         /// @returns the PUSH<_number> instruction
-        inline Instruction pushInstruction(uint8_t _number)
+        inline Instruction pushInstruction(unsigned _number)
         {
             assertThrow(1 <= _number && _number <= 32, InvalidOpcode, "Invalid PUSH instruction requested.");
             return Instruction(unsigned(Instruction::PUSH1) + _number - 1);
         }
 
         /// @returns the DUP<_number> instruction
-        inline Instruction dupInstruction(uint8_t _number)
+        inline Instruction dupInstruction(unsigned _number)
         {
             assertThrow(1 <= _number && _number <= 16, InvalidOpcode, "Invalid DUP instruction requested.");
             return Instruction(unsigned(Instruction::DUP1) + _number - 1);
         }
 
         /// @returns the SWAP<_number> instruction
-        inline Instruction swapInstruction(uint8_t _number)
+        inline Instruction swapInstruction(unsigned _number)
         {
             assertThrow(1 <= _number && _number <= 16, InvalidOpcode, "Invalid SWAP instruction requested.");
             return Instruction(unsigned(Instruction::SWAP1) + _number - 1);
         }
 
         /// @returns the LOG<_number> instruction
-        inline Instruction logInstruction(uint8_t _number)
+        inline Instruction logInstruction(unsigned _number)
         {
             assertThrow(_number <= 4, InvalidOpcode, "Invalid LOG instruction requested.");
             return Instruction(unsigned(Instruction::LOG0) + _number);

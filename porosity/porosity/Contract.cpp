@@ -686,8 +686,8 @@ Contract::setABI(
 
     m_publicFunctions.clear();
 
-    printf("Attempting to parse ABI definition:\n");
-    printf("%s\n", abi.c_str());
+    printf("Attempting to parse ABI definition...\n");
+    if (g_VerboseLevel >= 5)  printf("%s\n", abi.c_str());
     m_abi_json = nlohmann::json::parse(abi.c_str());
     printf("Success.\n");
 
@@ -893,7 +893,7 @@ Contract::StructureIfs(
     BasicBlockInfo *trueBlock = getBlockAt(_block->dstJUMPI);
     BasicBlockInfo *falseBlock = getBlockAt(_block->dstDefault);
 
-    if ((getBlockSuccessorsCount(trueBlock) != 1) || (getBlockSuccessorsCount(falseBlock) != 1)) {
+    if ((trueBlock && (getBlockSuccessorsCount(trueBlock) != 1)) || (falseBlock && (getBlockSuccessorsCount(falseBlock) != 1))) {
         return ifStmt;
     }
 
@@ -905,7 +905,7 @@ Contract::StructureIfs(
         falseBlock = _block->nextDefault->nextDefault;
     }
 
-    if ((getBlockSuccessorsCount(trueBlock) == 1) /*&& 
+    if (trueBlock && ((getBlockSuccessorsCount(trueBlock) == 1)) /*&&
         (trueBlock->dstDefault == falseLocation)*/) {
         for each(auto instrState in _block->instructions) {
             ifStmt.setCondition(instrState);
@@ -949,7 +949,9 @@ Contract::decompileBlock(
         case Instruction::MSTORE:
         {
             auto next = i + 1;
-            if (i->stack[1].exp.size()) exp = next->stack[0].name + " = " + i->stack[1].exp + ";";
+            if ((i->stack.size() > 1) && (next->stack.size() > 0)) {
+                if (i->stack[1].exp.size()) exp = next->stack[0].name + " = " + i->stack[1].exp + ";";
+            }
             // displayStack(&i->stack);
             break;
         }
@@ -960,7 +962,7 @@ Contract::decompileBlock(
         case Instruction::SSTORE:
         {
             exp = "store[" + i->stack[0].name + "] = " + InstructionContext::getDismangledRegisterName(&i->stack[1]) + ";";
-            if (_block->Flags & BlockFlags::NoMoreSSTORE) errCode |= DCode_Err_ReetrantVulnerablity;
+            if (_block->Flags & BlockFlags::NoMoreSSTORE) errCode |= DCode_Err_ReentrantVulnerablity;
             break;
         }
         case Instruction::RETURN:
@@ -1040,10 +1042,11 @@ Contract::IsRuntimeCode(
     bool leaveFunction = false;
 
     dev::eth::eachInstruction(code, [&](uint32_t _offset, Instruction _instr, u256 const& _data) {
-        porosity::printInstruction(_offset, _instr, _data);
+        // porosity::printInstruction(_offset, _instr, _data);
 
         if (leaveFunction) {
             if (hasCODECOPY && !m_runtimeOffset) {
+                if (_instr == Instruction::STOP) return;
                 m_runtimeOffset = _offset;
                 if (g_VerboseLevel >= 5) printf("Runtime function found at offset = 0x%x\n", _offset);
             }
