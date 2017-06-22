@@ -21,8 +21,9 @@ This new paradigm of applications opens the door to many possibilities and oppor
 
 As we, reverse engineers, know having access to source code is often a luxury. Hence, the need for an open-source tool like Porosity: decompiler for EVM bytecode into readable Solidity-syntax contracts – to enable static and dynamic analysis of compiled contracts but also vulnerability discovery.
 
-## Solidity
-### Compilation
+## Getting Started
+First you can either compile your own Ethereum contract or analyze public contract from [Etherscan](https://etherscan.io/address/0x8d12a197cb00d4747a1fe03395095ce2a5cc6819#code).
+
 ```
 PS E:\defcon2017> more .\vulnerable.sol
 contract SendBalance {
@@ -65,18 +66,56 @@ PS E:\defcon2017> $binRuntime
 016000206000828282505401925050819055505b565b6000600060005060008373ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000505490506101b6565b91905056
 ```
 
-## Porosity
-### Disassemble
+## Using Porosity
+### List functions 
+You can get the list of all the functions from the dispatch routine using the `--list` option.
 ```
-PS E:\defcon2017> & $porosity --abi '[{\"constant\":false,\"inputs\":[],\"name\":\"withdrawBalance\",\"outputs\":[],\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"addToBalance\",\"outputs\":[],\"type\":\"function\"},{\"
-constant\":true,\"inputs\":[{\"name\":\"u\",\"type\":\"address\"}],\"name\":\"getBalance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"type\":\"function\"}]' --runtime-code 60606040526000357c0100000000000000000000000000000000000000
-000000000000000000900480635fd8c7101461004f578063c0e317fb1461005e578063f8b2cb4f1461006d5761004d565b005b61005c6004805050610099565b005b61006b600480505061013e565b005b610083600480803590602001909190505061017d565b6040518082815260200191505060405180
-910390f35b3373ffffffffffffffffffffffffffffffffffffffff16611111600060005060003373ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060005054604051809050600060405180830381858888f19350505050151561010657610002565b600060006000
-5060003373ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600050819055505b565b34600060005060003373ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828282505401925050819055505b565b60006000600050
-60008373ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000505490506101b6565b91905056 --disassm
-Attempting to parse ABI definition:
-[{"constant":false,"inputs":[],"name":"withdrawBalance","outputs":[],"type":"function"},{"constant":false,"inputs":[],"name":"addToBalance","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"u","type":"address"}],"name":"ge
-tBalance","outputs":[{"name":"","type":"uint256"}],"type":"function"}]
+PS E:\defcon2017> & $porosity --code $code --abi $abi --list --verbose 0
+Porosity v0.1 (https://www.comae.io)
+Matt Suiche, Comae Technologies <support@comae.io>
+The Ethereum bytecode commandline decompiler.
+Decompiles the given Ethereum input bytecode and outputs the Solidity code.
+
+Attempting to parse ABI definition...
+Success.
+[+] Hash: 0x0A19B14A (trade) (1 references)
+[+] Hash: 0x0B927666 (order) (1 references)
+[+] Hash: 0x19774D43 (orderFills) (1 references)
+[+] Hash: 0x278B8C0E (cancelOrder) (1 references)
+[+] Hash: 0x2E1A7D4D (withdraw) (1 references)
+[+] Hash: 0x338B5DEA (depositToken) (1 references)
+[+] Hash: 0x46BE96C3 (amountFilled) (1 references)
+[+] Hash: 0x508493BC (tokens) (1 references)
+[+] Hash: 0x54D03B5C (changeFeeMake) (1 references)
+[+] Hash: 0x57786394 (feeMake) (1 references)
+[+] Hash: 0x5E1D7AE4 (changeFeeRebate) (1 references)
+[+] Hash: 0x65E17C9D (feeAccount) (1 references)
+[+] Hash: 0x6C86888B (testTrade) (1 references)
+[+] Hash: 0x71FFCB16 (changeFeeAccount) (1 references)
+[+] Hash: 0x731C2F81 (feeRebate) (1 references)
+[+] Hash: 0x8823A9C0 (changeFeeTake) (1 references)
+[+] Hash: 0x8F283970 (changeAdmin) (1 references)
+[+] Hash: 0x9E281A98 (withdrawToken) (1 references)
+[+] Hash: 0xBB5F4629 (orders) (1 references)
+[+] Hash: 0xC281309E (feeTake) (1 references)
+[+] Hash: 0xD0E30DB0 (deposit) (1 references)
+[+] Hash: 0xE8F6BC2E (changeAccountLevelsAddr) (1 references)
+[+] Hash: 0xF3412942 (accountLevelsAddr) (1 references)
+[+] Hash: 0xF7888AEC (balanceOf) (1 references)
+[+] Hash: 0xF851A440 (admin) (1 references)
+[+] Hash: 0xFB6E155F (availableVolume) (1 references)
+PS E:\defcon2017>
+```
+### Disassemble
+Using the `--disassm` option, you will be able to display the assembly code.
+```
+PS E:\defcon2017> & $porosity --abi $abi --code $code --disassm
+Porosity v0.1 (https://www.comae.io)
+Matt Suiche, Comae Technologies <support@comae.io>
+The Ethereum bytecode commandline decompiler.
+Decompiles the given Ethereum input bytecode and outputs the Solidity code.
+
+Attempting to parse ABI definition...
 Success.
 Contract::setABI: Name: withdrawBalance()
 Contract::setABI: signature: 0x5fd8c710
@@ -362,20 +401,16 @@ loc_000001b6:
 PS E:\defcon2017>
 ```
 ### Decompilation
+The `--decompile` option will decompile the given function or contract and attempt to highlight vulnerabilities.
 ```
-PS E:\defcon2017> & $porosity --abi '[{\"constant\":false,\"inputs\":[],\"name\":\"withdrawBalance\",\"outputs\":[],\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"addToBalance\",\"outputs\":[],\"type\":\"function\"},{\"
-constant\":true,\"inputs\":[{\"name\":\"u\",\"type\":\"address\"}],\"name\":\"getBalance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"type\":\"function\"}]' --runtime-code 60606040526000357c0100000000000000000000000000000000000000
-000000000000000000900480635fd8c7101461004f578063c0e317fb1461005e578063f8b2cb4f1461006d5761004d565b005b61005c6004805050610099565b005b61006b600480505061013e565b005b610083600480803590602001909190505061017d565b6040518082815260200191505060405180
-910390f35b3373ffffffffffffffffffffffffffffffffffffffff16611111600060005060003373ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060005054604051809050600060405180830381858888f19350505050151561010657610002565b600060006000
-5060003373ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600050819055505b565b34600060005060003373ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828282505401925050819055505b565b60006000600050
-60008373ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000505490506101b6565b91905056 --decompile --verbose 0
-Attempting to parse ABI definition:
-[{"constant":false,"inputs":[],"name":"withdrawBalance","outputs":[],"type":"function"},{"constant":false,"inputs":[],"name":"addToBalance","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"u","type":"address"}],"name":"ge
-tBalance","outputs":[{"name":"","type":"uint256"}],"type":"function"}]
+PS E:\defcon2017> & $porosity --abi $abi --code $code --decompile --verbose 0
+Porosity v0.1 (https://www.comae.io)
+Matt Suiche, Comae Technologies <support@comae.io>
+The Ethereum bytecode commandline decompiler.
+Decompiles the given Ethereum input bytecode and outputs the Solidity code.
+
+Attempting to parse ABI definition...
 Success.
-    Porosity. v0.0.1 (Feb 2017) - NOT FOR RELEASE
-    A decompiler for blockchain-based smart contract bytecode.
-    Matt Suiche - m@comae.io
 
 Hash: 0x5FD8C710
 function withdrawBalance() {
@@ -389,7 +424,6 @@ L3 (D8193): Potential reetrant vulnerability found.
 
 LOC: 5
 Hash: 0xC0E317FB
-VMState::executeInstruction: NOT_IMPLEMENTED: CALLVALUE
 function addToBalance() {
       store[msg.sender] = store[msg.sender];
       return;
