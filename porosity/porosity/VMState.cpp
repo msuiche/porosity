@@ -31,17 +31,21 @@ u256 address_mask("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 #define IsStackEntryTypeTainted(type) (type & (UserInput | UserInputTainted))
 #define IsMasking160bitsAddress(x) ((x)->value.compare(address_mask) == 0)
 
+#define IsStackIndexPresent(x) (m_stack.size() > x)
+
 inline void 
 VMState::SwapStackRegisters(
     uint32_t index_a,
     uint32_t index_b
 )
 {
-    StackRegister oldValue = m_stack[index_a];
-    StackRegister newValue = m_stack[index_b];
+    if (IsStackIndexPresent(index_a) && IsStackIndexPresent(index_b)) {
+        StackRegister oldValue = m_stack[index_a];
+        StackRegister newValue = m_stack[index_b];
 
-    m_stack[index_b] = oldValue;
-    m_stack[index_a] = newValue;
+        m_stack[index_b] = oldValue;
+        m_stack[index_a] = newValue;
+    }
 }
 
 std::string random_string(size_t length)
@@ -122,7 +126,12 @@ VMState::popStack(
     void
 )
 {
-    m_stack.erase(m_stack.begin());
+    if (m_stack.size()) {
+        m_stack.erase(m_stack.begin());
+    }
+    else {
+        printf("ERROR: Stack Underflow.\n");
+    }
 }
 
 bool

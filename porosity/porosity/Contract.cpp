@@ -1025,3 +1025,40 @@ Contract::decompile(
     decompiled_code.print();
     printf("LOC: %d\n", decompiled_code.loc());
 }
+
+bool
+Contract::IsRuntimeCode(
+    bytes code
+)
+/*++
+    Description: 
+        This function analyze the input bytecode to know if it is the runtime code.
+        If not it returns the offset of the runtime bytecode in m_runtimeOffset
+--*/
+{
+    bool hasCODECOPY = false;
+    bool leaveFunction = false;
+
+    dev::eth::eachInstruction(code, [&](uint32_t _offset, Instruction _instr, u256 const& _data) {
+        porosity::printInstruction(_offset, _instr, _data);
+
+        if (leaveFunction) {
+            if (hasCODECOPY && !m_runtimeOffset) {
+                m_runtimeOffset = _offset;
+                if (g_VerboseLevel >= 5) printf("Runtime function found at offset = 0x%x\n", _offset);
+            }
+            return;
+        }
+
+        switch (_instr) {
+            case Instruction::CODECOPY:
+                hasCODECOPY = true;
+                break;
+            case Instruction::RETURN:
+                leaveFunction = true;
+                break;
+        }
+    });
+
+    return !hasCODECOPY;
+}

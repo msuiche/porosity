@@ -24,7 +24,17 @@ using namespace dev::eth;
 class Contract {
 public:
     Contract(bytes bytecode) {
-        m_byteCodeRuntime = bytecode;
+        m_byteCode = bytecode;
+        if (IsRuntimeCode(bytecode)) {
+            m_byteCodeRuntime = bytecode;
+        }
+        else {
+            // In the caes IsRuntimeCode() didn't return the offset we move on.
+            if (!m_runtimeOffset) return;
+
+            bytes runtimeCode(bytecode.begin() + m_runtimeOffset, bytecode.end());
+            m_byteCodeRuntime = runtimeCode;
+        }
 
         getBasicBlocks();
     }
@@ -37,6 +47,11 @@ public:
     void
     getBasicBlocks(
         void
+    );
+
+    bool
+    IsRuntimeCode(
+        bytes bytecode
     );
 
     string
@@ -240,5 +255,6 @@ private:
     nlohmann::json m_abi_json;
     bytes m_byteCode;
     bytes m_byteCodeRuntime;
+    uint32_t m_runtimeOffset = 0;
 };
 #endif
