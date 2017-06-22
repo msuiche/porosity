@@ -74,38 +74,6 @@ constant\":true,\"inputs\":[{\"name\":\"u\",\"type\":\"address\"}],\"name\":\"ge
 910390f35b3373ffffffffffffffffffffffffffffffffffffffff16611111600060005060003373ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060005054604051809050600060405180830381858888f19350505050151561010657610002565b600060006000
 5060003373ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600050819055505b565b34600060005060003373ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828282505401925050819055505b565b60006000600050
 60008373ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000505490506101b6565b91905056 --disassm
-Contract::assignXrefToBlocks: function @ 0x00000000 (hash = 0x5fd8c710)
-Contract::assignXrefToBlocks: function @ 0x00000033 (hash = 0xc0e317fb)
-Contract::assignXrefToBlocks: function @ 0x0000003E (hash = 0xf8b2cb4f)
-Contract::assignXrefToBlocks: branch @ 0x00000049
-Contract::assignXrefToBlocks: branch @ 0x0000004F
-Contract::assignXrefToBlocks: branch @ 0x0000005E
-Contract::assignXrefToBlocks: branch @ 0x0000006D
-Contract::assignXrefToBlocks: function @ 0x00000099 (hash = 0x00000000)
-Contract::assignXrefToBlocks: branch @ 0x00000102
-Contract::assignXrefToBlocks: branch @ 0x0000013C
-Contract::assignXrefToBlocks: branch @ 0x0000017B
-Contract::assignXrefToBlocks: branch @ 0x0000017D
-Contract::assignXrefToBlocks: branch @ 0x000001B6
-Instruction Copy (start = 0x0, end = 0x33)
-Instruction Copy (start = 0x33, end = 0x3e)
-Instruction Copy (start = 0x3e, end = 0x49)
-Instruction Copy (start = 0x49, end = 0x4d)
-Instruction Copy (start = 0x4d, end = 0x4f)
-Instruction Copy (start = 0x4f, end = 0x5c)
-Instruction Copy (start = 0x5c, end = 0x5e)
-Instruction Copy (start = 0x5e, end = 0x6b)
-Instruction Copy (start = 0x6b, end = 0x6d)
-Instruction Copy (start = 0x6d, end = 0x83)
-Instruction Copy (start = 0x83, end = 0x99)
-Instruction Copy (start = 0x99, end = 0x102)
-Instruction Copy (start = 0x102, end = 0x106)
-Instruction Copy (start = 0x106, end = 0x13c)
-Instruction Copy (start = 0x13c, end = 0x13e)
-Instruction Copy (start = 0x13e, end = 0x17b)
-Instruction Copy (start = 0x17b, end = 0x17d)
-Instruction Copy (start = 0x17d, end = 0x1b6)
-Instruction Copy (start = 0x1b6, end = 0x1bb)
 Attempting to parse ABI definition:
 [{"constant":false,"inputs":[],"name":"withdrawBalance","outputs":[],"type":"function"},{"constant":false,"inputs":[],"name":"addToBalance","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"u","type":"address"}],"name":"ge
 tBalance","outputs":[{"name":"","type":"uint256"}],"type":"function"}]
