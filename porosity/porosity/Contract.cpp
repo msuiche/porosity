@@ -973,7 +973,22 @@ Contract::decompileBlock(
             break;
         case Instruction::SSTORE:
         {
-            string valueName = (i->stack[1].exp.size()) ? i->stack[1].exp : i->stack[1].name;
+
+            string valueName = "";
+            switch (i->stack[1].type) {
+                case ConstantComputed:
+                case Constant:
+                {
+                    stringstream mod;
+                    mod << "0x" << std::hex << i->stack[1].value;
+                    valueName = mod.str();
+                    // mod << "0x" << std::hex << second->value;
+                    break;
+                }
+                default:
+                    valueName = (i->stack[1].exp.size()) ? i->stack[1].exp : i->stack[1].name;
+                    break;
+            }
             exp = "store[" + i->stack[0].name + "] = " + valueName + ";";
             if (_block->Flags & BlockFlags::NoMoreSSTORE) errCode |= DCode_Err_ReentrantVulnerablity;
             break;
