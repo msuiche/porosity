@@ -74,6 +74,11 @@ typedef enum _NodeType {
     ExitNode = 0x2
 } NodeType;
 
+typedef enum _CallFunctionType {
+    Sha256Type = 2,
+    RipeMd160Type = 3
+} CallFunctionType;
+
 typedef enum _StackRegisterType {
     NumValueDefault = 0,
     Constant = (1 << 1),

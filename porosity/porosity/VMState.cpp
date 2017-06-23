@@ -22,6 +22,7 @@ using namespace dev;
 using namespace dev::eth;
 
 u256 address_mask("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+u256 endianMul("0x1000000000000000000000000");
 
 #define TaintStackEntry(x) (m_stack[x].type |= StackRegisterType::UserInputTainted)
 #define TagStackEntryAsConstant(x) (m_stack[x].type |= StackRegisterType::Constant)
@@ -309,25 +310,39 @@ VMState::executeInstruction(
             // Stack[5]
 
             stringstream exp;
+            string value = "";
+            int gasLimit = int(GetStackEntryById(0).value);
+            int callType = int(GetStackEntryById(1).value);
+
             if (GetStackEntryById(1).type & RegTypeLabelCaller) {
                 exp << GetStackEntryById(1).name;
             }
             else {
-                switch (int(GetStackEntryById(1).value)) {
-                case 2:
+                switch (callType) {
+                case Sha256Type:
                     exp << "sha256";
+                    value = GetStackEntryById(3).name;
+
+                    //uint32_t offset = int(GetStackEntryById(3).value);
+                    //StackRegister *reg = getMemoryData(offset);
+                    //reg->name = "sha256_value";
                     break;
-                case 3:
+                case RipeMd160Type:
                     exp << "ripemd160";
+                    value = GetStackEntryById(3).name;
+                    //uint32_t offset = int(GetStackEntryById(3).value);
+                    //StackRegister *reg = getMemoryData(offset);
+                    //reg->name = "ripemd160_value";
                     break;
                 default:
                     exp << std::hex << GetStackEntryById(1).value;
+                    value = GetStackEntryById(2).name;
                     break;
                 }
             }
             exp << ".call";
-            if (GetStackEntryById(0).value != 0x2540B5EF0) exp << ".gas(" << GetStackEntryById(0).value << ")";
-            exp << ".value(" << GetStackEntryById(2).name << ")";
+            if (gasLimit != 0x2540B5EF0) exp << ".gas(" << gasLimit << ")";
+            exp << ".value(" << value << ")";
             exp << "()";
 
             popStack();
@@ -339,8 +354,20 @@ VMState::executeInstruction(
 
             GetStackEntryById(0).exp = exp.str();
             GetStackEntryById(0).type = CallReturnStatus;
-            GetStackEntryById(0).name = "result";
-            GetStackEntryById(0).value = false; // always failing.
+            switch (callType) {
+                case Sha256Type:
+                    GetStackEntryById(0).name = "resultSha256";
+                    GetStackEntryById(0).value = true;
+                    break;
+                case RipeMd160Type:
+                    GetStackEntryById(0).name = "resultRMD160";
+                    GetStackEntryById(0).value = true;
+                    break;
+                default:
+                    GetStackEntryById(0).name = "result";
+                    GetStackEntryById(0).value = false; // always failing scenario.
+                break;
+            }
             break;
         }
         case Instruction::LOG0:
@@ -426,6 +453,15 @@ VMState::executeInstruction(
             popStack();
             break;
         case Instruction::MUL:
+            //u256 endianMul("0x1000000000000000000000000");
+            //if ((m_stack[1].value.compare(endianMul) == 0)
+            if (m_stack[0].value.compare(endianMul) == 0) {
+                // mask for address. type discovery.
+                m_stack[0].type = m_stack[1].type; // copy mask to result.
+                                                   // m_stack[0].type &= AddressType;
+                m_stack[0].name = m_stack[1].name;
+            }
+
             m_stack[0].value = m_stack[0].value * m_stack[1].value;
             // if (IsStackEntryTainted(1)) TaintStackEntry(0);
             m_stack[1] = m_stack[0];
@@ -518,8 +554,8 @@ VMState::executeInstruction(
             break;
         }
         case Instruction::JUMP:
-            printf("JUMP: stack.size() = 0x%x\n", m_stack.size());
-            printf("JUMP: target = 0x%x\n", int(m_stack[0].value));
+            // printf("JUMP: stack.size() = 0x%x\n", m_stack.size());
+            // printf("JUMP: target = 0x%x\n", int(m_stack[0].value));
             if (m_stack.size()) {
                 m_eip = int(m_stack[0].value);
                 popStack();
@@ -615,7 +651,7 @@ VMState::executeInstruction(
         }
         case Instruction::CALLVALUE:
         {
-            StackRegister reg = { "callvalue", "", RegTypeLabelThis, 0, 0 };
+            StackRegister reg = { "msg.value", "", StackRegisterType::UserInputTainted, 0, 0 };
             reg.value = u256("0x0bad1dea0bad1dea0bad1dea0bad1dea");
             pushStack(reg);
             break;
@@ -627,7 +663,7 @@ VMState::executeInstruction(
             StackRegister reg = { "", "", AddressType, 0, 0 };
             reg.value = m_caller;
             reg.name = "this";
-            reg.type = AddressType;
+            reg.type = AddressType | StackRegisterType::UserInputTainted;
             pushStack(reg);
             break;
         }
@@ -735,7 +771,7 @@ VMState::executeBlock(
 
         if (isEndOfBlock(opcde->offInfo.inst)) {
             if (opcde->offInfo.inst == Instruction::JUMP) {
-                printf("Execute basic block\n");
+                // printf("Execute basic block\n");
                 if (!_block->dstDefault) {
                     result = false;
                     break;
@@ -944,13 +980,22 @@ InstructionContext::getContextForInstruction(
                 exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
             }
             else {
-                if (!IsConstant(first))
+                if (!IsConstant(first)) {
                     exp = first->name + " " + operation[index] + "= " + getDismangledRegisterName(second) + ";";
+                }
             }
 
             string op;
 
-            op = getDismangledRegisterName(first) + " " + operation[index] + " " + getDismangledRegisterName(second);
+            if ((first->value.compare(endianMul) == 0) && (IsStackEntryTypeTainted(second->type))) {
+                op = getDismangledRegisterName(second);
+            }
+            else if ((second->value.compare(endianMul) == 0) && (IsStackEntryTypeTainted(first->type))) {
+                op = getDismangledRegisterName(first);
+            }
+            else {
+                op = getDismangledRegisterName(first) + " " + operation[index] + " " + getDismangledRegisterName(second);
+            }
             first->exp = op;
 
             break;
@@ -1139,6 +1184,7 @@ InstructionContext::getDismangledRegisterName(
     case UserInput:
     case UserInputTainted:
     case StorageType:
+
         return first->name;
         break;
     case RegTypeLabelSha3:

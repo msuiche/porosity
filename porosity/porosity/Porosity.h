@@ -46,7 +46,7 @@ namespace pt = boost::property_tree;
 #include "Utils.h"
 #include "Debug.h"
 
-#define VERBOSE_LEVEL 6
+#define VERBOSE_LEVEL 0
 
 extern uint32_t g_VerboseLevel; // VERBOSE_LEVEL
 extern bool g_SingleStepping;

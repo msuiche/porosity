@@ -955,13 +955,26 @@ Contract::decompileBlock(
             // displayStack(&i->stack);
             break;
         }
+        case Instruction::CALL:
+        {
+
+            auto next = i + 1;
+            int callType = int(i->stack[1].value);
+            switch (callType) {
+                case Sha256Type:
+                case RipeMd160Type:
+                    exp = next->stack[0].exp;
+                break;
+            }
+        }
         case Instruction::SLOAD:
             // exp = "store[" + i->stack[0].name + "] ? " + i->stack[1].exp + ";";
             // displayStack(&i->stack);
             break;
         case Instruction::SSTORE:
         {
-            exp = "store[" + i->stack[0].name + "] = " + InstructionContext::getDismangledRegisterName(&i->stack[1]) + ";";
+            string valueName = (i->stack[1].exp.size()) ? i->stack[1].exp : i->stack[1].name;
+            exp = "store[" + i->stack[0].name + "] = " + valueName + ";";
             if (_block->Flags & BlockFlags::NoMoreSSTORE) errCode |= DCode_Err_ReentrantVulnerablity;
             break;
         }
