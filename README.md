@@ -123,9 +123,7 @@ Contract::setABI: Name: addToBalance()
 Contract::setABI: signature: 0xc0e317fb
 Contract::setABI: Name: getBalance(address)
 Contract::setABI: signature: 0xf8b2cb4f
-    Porosity. v0.0.1 (Feb 2017) - NOT FOR RELEASE
-    A decompiler for blockchain-based smart contract bytecode.
-    Matt Suiche - m@comae.io
+
 
 - Total byte code size: 0x1bb (443)
 
@@ -425,7 +423,7 @@ L3 (D8193): Potential reetrant vulnerability found.
 LOC: 5
 Hash: 0xC0E317FB
 function addToBalance() {
-      store[msg.sender] = store[msg.sender];
+      store[msg.sender] = store[msg.sender] + msg.value;
       return;
 }
 
