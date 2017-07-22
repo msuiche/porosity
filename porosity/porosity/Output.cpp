@@ -1,5 +1,6 @@
 #include "Porosity.h"
 
+#ifdef _WIN32
 #include <windows.h>
 
 uint16_t
@@ -32,3 +33,20 @@ Red(char *Format, ...)
 
     SetConsoleTextAttribute(Handle, Color);
 }
+
+#else
+#include <stdarg.h>
+
+void
+Red(char *Format, ...)
+{
+    va_list va;
+
+    va_start(va, Format);
+    vprintf(C_RED, va);
+    vprintf(Format, va);
+    vprintf(C_RESET, va);
+    va_end(va);
+}
+
+#endif
