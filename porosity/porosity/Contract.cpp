@@ -907,7 +907,7 @@ Contract::StructureIfs(
 
     if (trueBlock && ((getBlockSuccessorsCount(trueBlock) == 1)) /*&&
         (trueBlock->dstDefault == falseLocation)*/) {
-#ifdef __WIN32
+#ifdef _WIN32
         for each (auto instrState in _block->instructions) {
 #else
         for (auto instrState : _block->instructions) {
