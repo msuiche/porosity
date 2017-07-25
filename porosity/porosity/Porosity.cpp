@@ -74,55 +74,78 @@ parse(
 {
     out->verboseLevel = VERBOSE_LEVEL;
     out->noHeader = false;
-
-    for (int i = 0; i < argc; i++) {
-        string keyword = argv[i];
-        if ((keyword == "--verbose") && ((i + 1) < argc)) {
-            out->verboseLevel = atoi(argv[++i]);
+    for (int i = 1; i < argc; i++) {
+        string kw;
+        string arg;
+        bool inArg = false;
+        for (char *c = argv[i]; *c; ++c) {
+            if (!inArg) {
+                if (*c == '=') {
+                    inArg = true;
+                    continue;
+                }
+                kw += *c;
+            } else {
+                arg += *c;
+            }
         }
-        else if ((keyword == "--debug")) {
+        if ((i + 1) < argc) {
+            char *next = argv[i+1];
+            if (*next != '-') {
+                // The next argument is the arg. Save it here if arg isn't
+                // already set with '=', and skip it in the loop.
+                if (arg.size() == 0) {
+                    arg = next;
+                }
+                i++;
+            }
+        }
+        if ((kw == "--verbose") && arg.size()) {
+            out->verboseLevel = atoi(arg.c_str());
+        }
+        else if ((kw == "--debug")) {
             out->debugMode = true;
         }
-        else if ((keyword == "--abi") && ((i + 1) < argc)) {
-            out->abiMethod = argv[++i];
+        else if ((kw == "--abi") && arg.size()) {
+            out->abiMethod = arg;
         }
-        else if ((keyword == "--abi-file") && ((i + 1) < argc)) {
-            out->abiMethodFile = argv[++i];
+        else if ((kw == "--abi-file") && arg.size()) {
+            out->abiMethodFile = arg;
         }
-        else if ((keyword == "--hash") && ((i + 1) < argc)) {
-            dev::FixedHash<4> hash(fromHex(argv[++i]));
+        else if ((kw == "--hash") && arg.size()) {
+            dev::FixedHash<4> hash(fromHex(arg));
             out->targetHashMethod = (hash[0] << 24) | (hash[1] << 16) | (hash[2] << 8) | hash[3];
             printf("Target function: 0x%08x\n", out->targetHashMethod);
         }
-        else if ((keyword == "--list")) {
+        else if ((kw == "--list")) {
             out->method |= MethodListFunctions;
         }
-        else if (((keyword == "--runtime-code") || (keyword == "--code")) && ((i + 1) < argc)) {
-            out->codeByteRuntime = fromHex(argv[++i]);
+        else if (((kw == "--runtime-code") || (kw == "--code")) && arg.size()) {
+            out->codeByteRuntime = fromHex(arg);
         }
-        else if ((keyword == "--code") && ((i + 1) < argc)) {
-            out->codeByte = fromHex(argv[++i]);
+        else if ((kw == "--code") && arg.size()) {
+            out->codeByte = fromHex(arg);
         }
-        else if ((keyword == "--disassm") || (keyword == "--disasm")) {
+        else if ((kw == "--disassm") || (kw == "--disasm")) {
             out->method |= MethodDisassm;
         }
-        else if ((keyword == "--decompile")) {
+        else if ((kw == "--decompile")) {
             out->method |= MethodDecompile;
         }
-        else if ((keyword == "--single-step")) {
+        else if ((kw == "--single-step")) {
             out->method |= MethodSingleStepping;
             g_SingleStepping = true;
         }
-        else if ((keyword == "--cfg")) {
+        else if ((kw == "--cfg")) {
             out->method |= MethodControlFlowGraph;
             out->noHeader = true;
         }
-        else if ((keyword == "--cfg-full")) {
+        else if ((kw == "--cfg-full")) {
             out->method |= MethodControlFlowGraphFull;
             out->noHeader = true;
         }
-        else if ((keyword == "--arguments") && ((i + 1) < argc)) {
-            out->arguments = fromHex(argv[++i]);
+        else if ((kw == "--arguments") && arg.size()) {
+            out->arguments = fromHex(arg);
         }
     }
 
