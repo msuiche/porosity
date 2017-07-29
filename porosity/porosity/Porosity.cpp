@@ -172,7 +172,7 @@ parse(
 void
 help() {
     printf("\n");
-    printf("Usage: porosity.exe [options]\n");
+    printf("Usage: porosity [options]\n");
     printf("Debug:\n");
     printf("    --debug                             - Enable debug mode. (testing only - no input parameter needed.)\n\n");
     printf("Input parameters:\n");
