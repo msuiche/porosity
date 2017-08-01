@@ -43,7 +43,6 @@ along with cpp-ethereum.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <chrono>
 #pragma warning(push)
-#include <boost/version.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #pragma warning(pop)
 #include "vector_ref.h"
