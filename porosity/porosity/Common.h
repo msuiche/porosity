@@ -44,9 +44,6 @@ along with cpp-ethereum.  If not, see <http://www.gnu.org/licenses/>.
 #include <chrono>
 #pragma warning(push)
 #include <boost/version.hpp>
-#if (BOOST_VERSION == 105800)
-#include "boost_multiprecision_number_compare_bug_workaround.hpp"
-#endif
 #include <boost/multiprecision/cpp_int.hpp>
 #pragma warning(pop)
 #include "vector_ref.h"

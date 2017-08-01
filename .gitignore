@@ -2,3 +2,16 @@
 /porosity-private
 /porosity/packages/boost-vc140.1.63.0.0
 boost.1.63.0.0
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+build-aux/
+config.log
+config.status
+configure
+libtool
+porosity/porosity/*.o
+porosity/porosity/.deps/
+porosity/porosity/porosity
+output/*
