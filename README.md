@@ -6,7 +6,7 @@ Platform         | Status
 -----------------|-----------
 Windows          | [![Build Status](https://comae.visualstudio.com/_apis/public/build/definitions/13b58962-60a0-48ed-879d-f56575385e2e/4/badge)](https://comae.visualstudio.com/_apis/public/build/definitions/13b58962-60a0-48ed-879d-f56575385e2e/4/badge)
 Linux.           | Supported
-Mac OS X.        | TO-DO
+Mac OS X.        | Supported
 
 ## Overview
 Ethereum is gaining a significant popularity in the blockchain community, mainly due to fact that it is design in a way that enables developers to write decentralized applications (Dapps) and smart-contract using blockchain technology.
