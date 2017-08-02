@@ -189,6 +189,10 @@ void dev::eth::eachInstruction(
         size_t additional = 0;
         if (isValidInstruction(instr))
             additional = instructionInfo(instr).additional;
+        else {
+            // printf("Invalid instruction. Aborting...\n");
+            return;
+        }
 
         uint32_t offset = std::distance(_mem.begin(), it);
         u256 data;

@@ -375,19 +375,29 @@ Contract::walkAndConnectNodes(
     //
     uint32_t next = _block;
     while (true) {
-        auto block = m_listbasicBlockInfo.find(next);
+        auto block = m_listbasicBlockInfo.find(next); // getBlockAt()
         if (block == m_listbasicBlockInfo.end()) break;
+
+        if (block->second.walkedNode) break;
+
         next = block->second.dstDefault;
 
+        // printf("hash = 0x%x, block = 0x%x, default = 0x%x, JUMPI = 0x%x\n", _hash, _block, block->second.dstDefault, block->second.dstJUMPI);
         if (block->second.dstJUMPI) {
+            block->second.walkedNode = true;
             walkAndConnectNodes(_hash, block->second.dstJUMPI);
         }
 
         if (!next) break;
         if (next == NODE_DEADEND) {
-            auto exitNode = m_exitNodesByHash.find(_hash);
-            block->second.dstDefault = exitNode->second;
-            block->second.nextDefault = getBlockAt(block->second.dstDefault);
+            auto exitNode = m_exitNodesByHash.find(_hash); // getBlockAt()
+            if (exitNode != m_exitNodesByHash.end()) {
+                block->second.dstDefault = exitNode->second;
+            }
+
+            if (!block->second.nextDefault) {
+                block->second.nextDefault = getBlockAt(block->second.dstDefault);
+            }
             break; // next
         }
     }

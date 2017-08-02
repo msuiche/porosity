@@ -160,6 +160,7 @@ typedef struct _BasicBlockInfo
     string name;
 
     bool visited;
+    bool walkedNode;
     u256 dominators;
 
     ConditionAttribute condAttr;
