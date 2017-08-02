@@ -12,9 +12,6 @@ AC_CHECK_HEADERS([boost/version.hpp], [boost_found_headers=yes; break;])
 AS_IF([test "x$boost_found_headers" != "xyes"],
 [AC_MSG_ERROR([Unable to find boost headers.])])
 
-define(MINIMUM_REQUIRED_BOOST, 1.62.0)
-AX_BOOST_BASE([MINIMUM_REQUIRED_BOOST])
-
 AC_MSG_CHECKING([boost version])
 TEMP_CPPFLAGS="$CPPFLAGS"
 CPPFLAGS="$BOOST_CPPFLAGS $CPPFLAGS"

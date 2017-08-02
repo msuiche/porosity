@@ -25,6 +25,22 @@ As we, reverse engineers, know having access to source code is often a luxury. H
 
 ### Debian (Ubuntu 16.04)
 
+Install development dependencies:
+
+```
+sudo apt-get install build-essential libtool autotools-dev automake
+```
+
+Install boost *(only necessary if boost version > 1.58 isn't available in package manager)*:
+```
+sudo apt-get install python-dev libxml2-dev libxslt-dev libicu-dev gperf bison libjpeg-dev wget
+wget https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
+tar xf boost_1_64_0.tar.bz2
+cd boost_1_64_0
+./bootstap.sh
+sudo ./b2 install
+```
+
 Configure and build:
 ```sh
 ./autogen.sh
