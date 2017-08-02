@@ -1,7 +1,5 @@
 # porosity
 
-## Getting Started
-
 Platform         | Status
 -----------------|-----------
 Windows          | [![Build Status](https://comae.visualstudio.com/_apis/public/build/definitions/13b58962-60a0-48ed-879d-f56575385e2e/4/badge)](https://comae.visualstudio.com/_apis/public/build/definitions/13b58962-60a0-48ed-879d-f56575385e2e/4/badge)
@@ -27,11 +25,18 @@ As we, reverse engineers, know having access to source code is often a luxury. H
 
 ### Debian (Ubuntu 16.04)
 
+Configure and build:
 ```sh
 ./autogen.sh
 ./configure
-make && make install
-``
+make
+```
+
+And install with:
+
+```
+sudo make install
+```
 
 ## Getting Started
 First you can either compile your own Ethereum contract or analyze public contract from [Etherscan](https://etherscan.io/address/0x8d12a197cb00d4747a1fe03395095ce2a5cc6819#code).
