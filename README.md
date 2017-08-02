@@ -1,7 +1,5 @@
 # porosity
 
-## Getting Started
-
 Platform         | Status
 -----------------|-----------
 Windows          | [![Build Status](https://comae.visualstudio.com/_apis/public/build/definitions/13b58962-60a0-48ed-879d-f56575385e2e/4/badge)](https://comae.visualstudio.com/_apis/public/build/definitions/13b58962-60a0-48ed-879d-f56575385e2e/4/badge)
@@ -22,6 +20,39 @@ This new paradigm of applications opens the door to many possibilities and oppor
 
 
 As we, reverse engineers, know having access to source code is often a luxury. Hence, the need for an open-source tool like Porosity: decompiler for EVM bytecode into readable Solidity-syntax contracts – to enable static and dynamic analysis of compiled contracts but also vulnerability discovery.
+
+## Build & Install
+
+### Debian (Ubuntu 16.04)
+
+Install development dependencies:
+
+```
+sudo apt-get install build-essential libtool autotools-dev automake
+```
+
+Install boost *(only necessary if boost version > 1.58 isn't available in package manager)*:
+```
+sudo apt-get install python-dev libxml2-dev libxslt-dev libicu-dev gperf bison libjpeg-dev wget
+wget https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
+tar xf boost_1_64_0.tar.bz2
+cd boost_1_64_0
+./bootstap.sh
+sudo ./b2 install
+```
+
+Configure and build:
+```sh
+./autogen.sh
+./configure
+make
+```
+
+And install with:
+
+```
+sudo make install
+```
 
 ## Getting Started
 First you can either compile your own Ethereum contract or analyze public contract from [Etherscan](https://etherscan.io/address/0x8d12a197cb00d4747a1fe03395095ce2a5cc6819#code).
