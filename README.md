@@ -26,8 +26,8 @@ As we, reverse engineers, know having access to source code is often a luxury. H
 ## Getting Started
 First you can either compile your own Ethereum contract or analyze public contract from [Etherscan](https://etherscan.io/address/0x8d12a197cb00d4747a1fe03395095ce2a5cc6819#code).
 
+`more .\vulnerable.sol`
 ```
-PS E:\defcon2017> more .\vulnerable.sol
 contract SendBalance {
     mapping ( address => uint ) userBalances ;
     bool withdrawn = false ;
@@ -46,22 +46,34 @@ contract SendBalance {
         userBalances [msg.sender ] = 0;
     }
 }
-PS E:\defcon2017> & $solc --abi -o output vulnerable.sol
-PS E:\defcon2017> & $solc --bin -o output vulnerable.sol
-PS E:\defcon2017> & $solc --bin-runtime -o output vulnerable.sol
-PS E:\defcon2017> $abi = Get-Content .\output\SendBalance.abi
-PS E:\defcon2017> $bin = Get-Content .\output\SendBalance.bin
-PS E:\defcon2017> $binRuntime = Get-Content .\output\SendBalance.bin-runtime
-PS E:\defcon2017> $abi
+```
+`solc --abi -o output vulnerable.sol`
+
+`solc --bin -o output vulnerable.sol`
+
+`solc --bin-runtime -o output vulnerable.sol`
+
+`$abi = Get-Content .\output\SendBalance.abi`
+
+`$bin = Get-Content .\output\SendBalance.bin`
+
+`$binRuntime = Get-Content .\output\SendBalance.bin-runtime`
+
+`echo $abi`
+```
 [{"constant":false,"inputs":[],"name":"withdrawBalance","outputs":[],"type":"function"},{"constant":false,"inputs":[],"name":"addToBalance","outputs":[],"type":"function"},{"constant":true,"inputs":[{"name":"u","type":"address"}],"name":"ge
 tBalance","outputs":[{"name":"","type":"uint256"}],"type":"function"}]
-PS E:\defcon2017> $bin
+```
+`echo $bin`
+```
 60606040526000600160006101000a81548160ff021916908302179055506101bb8061002b6000396000f360606040526000357c0100000000000000000000000000000000000000000000000000000000900480635fd8c7101461004f578063c0e317fb1461005e578063f8b2cb4f1461006d5761004d56
 5b005b61005c6004805050610099565b005b61006b600480505061013e565b005b610083600480803590602001909190505061017d565b6040518082815260200191505060405180910390f35b3373ffffffffffffffffffffffffffffffffffffffff16611111600060005060003373ffffffffffffffff
 ffffffffffffffffffffffff16815260200190815260200160002060005054604051809050600060405180830381858888f19350505050151561010657610002565b6000600060005060003373ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600050819055505b
 565b34600060005060003373ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000828282505401925050819055505b565b6000600060005060008373ffffffffffffffffffffffffffffffffffffffff1681526020019081526020016000206000505490506101b6
 565b91905056
-PS E:\defcon2017> $binRuntime
+```
+`echo $binRuntime`
+```
 60606040526000357c0100000000000000000000000000000000000000000000000000000000900480635fd8c7101461004f578063c0e317fb1461005e578063f8b2cb4f1461006d5761004d565b005b61005c6004805050610099565b005b61006b600480505061013e565b005b61008360048080359060
 2001909190505061017d565b6040518082815260200191505060405180910390f35b3373ffffffffffffffffffffffffffffffffffffffff16611111600060005060003373ffffffffffffffffffffffffffffffffffffffff16815260200190815260200160002060005054604051809050600060405180
 830381858888f19350505050151561010657610002565b6000600060005060003373ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020600050819055505b565b34600060005060003373ffffffffffffffffffffffffffffffffffffffff1681526020019081526020
@@ -71,8 +83,10 @@ PS E:\defcon2017> $binRuntime
 ## Using Porosity
 ### List functions 
 You can get the list of all the functions from the dispatch routine using the `--list` option.
+
+`porosity --code $code --abi $abi --list --verbose 0`
+
 ```
-PS E:\defcon2017> & $porosity --code $code --abi $abi --list --verbose 0
 Porosity v0.1 (https://www.comae.io)
 Matt Suiche, Comae Technologies <support@comae.io>
 The Ethereum bytecode commandline decompiler.
@@ -106,12 +120,17 @@ Success.
 [+] Hash: 0xF7888AEC (balanceOf) (1 references)
 [+] Hash: 0xF851A440 (admin) (1 references)
 [+] Hash: 0xFB6E155F (availableVolume) (1 references)
-PS E:\defcon2017>
 ```
 ### Disassemble
 Using the `--disassm` option, you will be able to display the assembly code.
+
+`porosity --abi $abi --code $code --disassm`
+
+
+<details>
+    <summary>click here to view <b>Disassembly</b></summary>
+
 ```
-PS E:\defcon2017> & $porosity --abi $abi --code $code --disassm
 Porosity v0.1 (https://www.comae.io)
 Matt Suiche, Comae Technologies <support@comae.io>
 The Ethereum bytecode commandline decompiler.
@@ -398,12 +417,19 @@ loc_000001b6:
 0x000001b8 90                         SWAP1
 0x000001b9 50                         POP
 0x000001ba 56                         JUMP
-PS E:\defcon2017>
 ```
+
+</details>
+
 ### Decompilation
 The `--decompile` option will decompile the given function or contract and attempt to highlight vulnerabilities.
+
+`porosity --abi $abi --code $code --decompile --verbose 0`
+
+<details>
+    <summary>click here to view <b>Decompilation</b></summary>
+
 ```
-PS E:\defcon2017> & $porosity --abi $abi --code $code --decompile --verbose 0
 Porosity v0.1 (https://www.comae.io)
 Matt Suiche, Comae Technologies <support@comae.io>
 The Ethereum bytecode commandline decompiler.
@@ -438,5 +464,9 @@ function getBalance(address) {
 
 
 LOC: 3
-PS E:\defcon2017>
 ```
+
+</details>
+
+### Develop
+
