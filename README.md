@@ -468,5 +468,12 @@ LOC: 3
 
 </details>
 
-### Develop
+## Develop
+
+### OSX
+
+`cd porosity/porosity/`
+
+`make`
+
 
