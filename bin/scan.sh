@@ -29,14 +29,14 @@ eval_contracts() {
     if [ -f $CACHE_PATH/${address}/abi ]; then
       abi=$(cat $CACHE_PATH/${address}/abi)
     fi
-    eval_contract $address, $abi, $bytecode
+    eval_contract $address $bytecode $abi
   done
 }
 
 eval_contract() {
   address=$1
-  abi=$2
-  bytecode=$3
+  bytecode=$2
+  abi=$3
 
   if [ -z "$bytecode" ]; then
     echo "WARNING: Skipping evaluation of contract at ${address}; no bytecode resolved"
