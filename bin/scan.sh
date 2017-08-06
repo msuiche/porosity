@@ -113,22 +113,29 @@ fetch_etherscan_contract() {
                               | awk -v pattern='>(.*)[<\\/pre>|<\\/div>]$' '{ while (match($0, pattern)) { printf("%s\n", substr($0, RSTART + 1, RLENGTH - 7)); $0=substr($0, RSTART + RLENGTH) } }' \
                               | sed 's/<\/div>$//g')
 
-  abi=$(echo "$response" | sed 's/<br>/\n&/g' \
-                         | grep '<pre' \
-                         | grep -i 'contract abi' \
-                         | egrep 'js-copytextarea2|12pc' \
-                         | sed 's/&nbsp;<pre/\n&/g' \
-                         | grep '<pre' \
-                         | awk -v pattern='>(.*)[<\\/pre>|<\\/div>]$' '{ while (match($0, pattern)) { printf("%s\n", substr($0, RSTART + 1, RLENGTH - 7)); $0=substr($0, RSTART + RLENGTH) } }')
+  echo "${bytecode}" > $CACHE_PATH/${address}/bytecode
 
   if [ "$DEBUG_OUTPUT" == "true" ]; then
     echo "DEBUG: Retrieved bytecode ${bytecode} for contract at address: ${address}"
-    echo "DEBUG: Retrieved abi ${abi} for contract at address: ${address}"
   fi
 
-  echo "${bytecode}" > $CACHE_PATH/${address}/bytecode
+  fetch_etherscan_contract_abi $address
+}
+
+fetch_etherscan_contract_abi() {
+  address=$1
+
+  if [ "$DEBUG_OUTPUT" == "true" ]; then
+    echo "Fetching Ethereum contract ABI from etherscan: ${address}"
+  fi
+
+  abi=$(curl --silent https://api.etherscan.io/api?module=contract&action=getabi&address=${address} | python -c "import sys, json; print json.load(sys.stdin)['result']")
 
   if [ ! -z "$abi" ]; then
+    if [ "$DEBUG_OUTPUT" == "true" ]; then
+      echo "DEBUG: Retrieved abi ${abi} for contract at address: ${address}"
+    fi
+
     echo "${abi}" > $CACHE_PATH/${address}/abi
   fi
 }
