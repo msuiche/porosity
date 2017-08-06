@@ -162,7 +162,13 @@ fetch_contracts() {
 
 touch_contract() {
   address=$1
+  creation_block=$2
+
   mkdir -p $CACHE_PATH/${address}
+
+  if [ ! -z "$creation_block" ]; then
+    echo "${creation_block}" > $CACHE_PATH/${address}/.creation_block
+  fi
 }
 
 touch_etherscan_contracts() {
@@ -207,7 +213,7 @@ touch_rpc_contracts() {
           echo "Transaction ${txn_hash} created contract: ${contract_address}"
         fi
 
-        touch_contract $contract_address
+        touch_contract $contract_address "0x${hex}"
       fi
     done
 
