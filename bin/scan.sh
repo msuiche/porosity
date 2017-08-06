@@ -135,8 +135,17 @@ fetch_etherscan_contract() {
 
 fetch_rpc_contract() {
   address=$1
-  echo "FATAL: fetch_rpc_contract not yet implemented"
-  exit 1
+  block=$2
+  if [ -z "$block" ]; then
+    block="latest"
+  fi
+
+  bytecode=$(curl --silent -X POST $JSON_RPC_ENDPOINT --data "{\"jsonrpc\": \"2.0\", \"method\": \"eth_getCode\", \"params\": [\"${address}\", \"${block}\"], \"id\": 1}" | python -c "import sys, json; print json.load(sys.stdin)['result']")
+  echo "${bytecode}" > $CACHE_PATH/${address}/bytecode
+
+  if [ "$DEBUG_OUTPUT" == "true" ]; then
+    echo "DEBUG: Retrieved bytecode ${bytecode} for contract at address: ${address}"
+  fi
 }
 
 fetch_contracts() {
