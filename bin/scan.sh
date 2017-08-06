@@ -3,12 +3,15 @@
 readonly PROGNAME=$(basename "$0")
 readonly CACHE_PATH=./.cache
 
+export PYTHONIOENCODING=utf8
+
 DEBUG_OUTPUT="false"
 CONTINUE="false"
 EVAL_CONTRACTS="true"
 FETCH_CONTRACTS="true"
-POROSITY_TIMEOUT="10"
 JSON_RPC="false"
+JSON_RPC_ENDPOINT="http://localhost:8545"
+POROSITY_TIMEOUT="10"
 TOUCH_CONTRACTS="true"
 
 clear_cache() {
@@ -17,8 +20,8 @@ clear_cache() {
 }
 
 configure_rpc() {
-  echo "FATAL: JSON RPC not yet implemented"
-  exit 1
+  echo "Using JSON-RPC endpoint: ${JSON_RPC_ENDPOINT}"
+  # TODO: allow endpoint to be configurable
 }
 
 eval_contracts() {
@@ -132,7 +135,7 @@ fetch_etherscan_contract() {
 
 fetch_rpc_contract() {
   address=$1
-  echo "FATAL: JSON RPC not yet implemented"
+  echo "FATAL: fetch_rpc_contract not yet implemented"
   exit 1
 }
 
@@ -149,6 +152,7 @@ fetch_contracts() {
 }
 
 touch_contract() {
+  address=$1
   mkdir -p $CACHE_PATH/${address}
 }
 
@@ -167,8 +171,39 @@ touch_etherscan_contracts() {
 }
 
 touch_rpc_contracts() {
-  echo "FATAL: JSON RPC not yet implemented"
-  exit 1
+  block=$(($(curl --silent -H 'content-type: application/json' -X POST $JSON_RPC_ENDPOINT --data "{\"jsonrpc\": \"2.0\", \"method\": \"eth_blockNumber\", \"params\": [], \"id\": 83}" | awk -F\" '{print toupper($10)}')))
+
+  while [ $block -gt 0 ]
+  do
+    hex=$(echo "obase=16; ${block}" | bc)
+
+    if [ "$DEBUG_OUTPUT" == "true" ]; then
+      echo "Fetching block ${hex} via JSON-RPC"
+    fi
+
+    transactions=($(curl --silent -H 'content-type: application/json' -X POST $JSON_RPC_ENDPOINT --data "{\"jsonrpc\": \"2.0\", \"method\": \"eth_getBlockByNumber\", \"params\": [\"0x${hex}\", true], \"id\": 1}" | python -c "import sys, json; txns = json.load(sys.stdin)['result']['transactions']; print '\n'.join(map(lambda tx: tx['hash'], txns))"))
+
+    if [ "$DEBUG_OUTPUT" == "true" ]; then
+      echo "Fetched ${transactions[@]} transactions for block 0x${hex}"
+    fi
+
+    for txn_hash in $transactions; do
+      if [ "$DEBUG_OUTPUT" == "true" ]; then
+        echo "Fetching transaction ${txn_hash}"
+      fi
+
+      contract_address=$(curl --silent -H 'content-type: application/json' -X POST $JSON_RPC_ENDPOINT --data "{\"jsonrpc\": \"2.0\", \"method\": \"eth_getTransactionReceipt\", \"params\": [\"${txn_hash}\"], \"id\": 1}" | python -c "import sys, json; print json.load(sys.stdin)['result']['contractAddress']" | awk '{gsub("None", "", $0); print $0}')
+      if [ ! -z "$contract_address" ]; then
+        if [ "$DEBUG_OUTPUT" == "true" ]; then
+          echo "Transaction ${txn_hash} created contract: ${contract_address}"
+        fi
+
+        touch_contract $contract_address
+      fi
+    done
+
+    block=$((block - 1))
+  done
 }
 
 touch_contracts() {
