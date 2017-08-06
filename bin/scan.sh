@@ -153,6 +153,8 @@ fetch_rpc_contract() {
   if [ "$DEBUG_OUTPUT" == "true" ]; then
     echo "DEBUG: Retrieved bytecode ${bytecode} for contract at address: ${address}"
   fi
+
+  fetch_etherscan_contract_abi $address
 }
 
 fetch_contracts() {
