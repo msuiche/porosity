@@ -195,6 +195,7 @@ touch_etherscan_contracts() {
 }
 
 touch_rpc_contracts() {
+  # TODO-- calculate cached_block & historical_scan_complete
   block=$(($(curl --silent -H 'content-type: application/json' -X POST $JSON_RPC_ENDPOINT --data "{\"jsonrpc\": \"2.0\", \"method\": \"eth_blockNumber\", \"params\": [], \"id\": 83}" | awk -F\" '{print toupper($10)}')))
 
   while [ $block -gt 0 ]
@@ -211,7 +212,7 @@ touch_rpc_contracts() {
       echo "Fetched ${transactions[@]} transactions for block 0x${hex}"
     fi
 
-    for txn_hash in $transactions; do
+    for txn_hash in "${transactions[@]}"; do
       if [ "$DEBUG_OUTPUT" == "true" ]; then
         echo "Fetching transaction ${txn_hash}"
       fi
