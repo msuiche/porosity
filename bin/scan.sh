@@ -3,12 +3,15 @@
 readonly PROGNAME=$(basename "$0")
 readonly CACHE_PATH=./.cache
 
+export PYTHONIOENCODING=utf8
+
 DEBUG_OUTPUT="false"
 CONTINUE="false"
 EVAL_CONTRACTS="true"
 FETCH_CONTRACTS="true"
-POROSITY_TIMEOUT="10"
 JSON_RPC="false"
+JSON_RPC_ENDPOINT="http://localhost:8545"
+POROSITY_TIMEOUT="10"
 TOUCH_CONTRACTS="true"
 
 clear_cache() {
@@ -17,8 +20,8 @@ clear_cache() {
 }
 
 configure_rpc() {
-  echo "FATAL: JSON RPC not yet implemented"
-  exit 1
+  echo "Using JSON-RPC endpoint: ${JSON_RPC_ENDPOINT}"
+  # TODO: allow endpoint to be configurable
 }
 
 eval_contracts() {
@@ -29,14 +32,14 @@ eval_contracts() {
     if [ -f $CACHE_PATH/${address}/abi ]; then
       abi=$(cat $CACHE_PATH/${address}/abi)
     fi
-    eval_contract $address, $abi, $bytecode
+    eval_contract $address $bytecode $abi
   done
 }
 
 eval_contract() {
   address=$1
-  abi=$2
-  bytecode=$3
+  bytecode=$2
+  abi=$3
 
   if [ -z "$bytecode" ]; then
     echo "WARNING: Skipping evaluation of contract at ${address}; no bytecode resolved"
@@ -110,30 +113,48 @@ fetch_etherscan_contract() {
                               | awk -v pattern='>(.*)[<\\/pre>|<\\/div>]$' '{ while (match($0, pattern)) { printf("%s\n", substr($0, RSTART + 1, RLENGTH - 7)); $0=substr($0, RSTART + RLENGTH) } }' \
                               | sed 's/<\/div>$//g')
 
-  abi=$(echo "$response" | sed 's/<br>/\n&/g' \
-                         | grep '<pre' \
-                         | grep -i 'contract abi' \
-                         | egrep 'js-copytextarea2|12pc' \
-                         | sed 's/&nbsp;<pre/\n&/g' \
-                         | grep '<pre' \
-                         | awk -v pattern='>(.*)[<\\/pre>|<\\/div>]$' '{ while (match($0, pattern)) { printf("%s\n", substr($0, RSTART + 1, RLENGTH - 7)); $0=substr($0, RSTART + RLENGTH) } }')
+  echo "${bytecode}" > $CACHE_PATH/${address}/bytecode
 
   if [ "$DEBUG_OUTPUT" == "true" ]; then
     echo "DEBUG: Retrieved bytecode ${bytecode} for contract at address: ${address}"
-    echo "DEBUG: Retrieved abi ${abi} for contract at address: ${address}"
   fi
 
-  echo "${bytecode}" > $CACHE_PATH/${address}/bytecode
+  fetch_etherscan_contract_abi $address
+}
+
+fetch_etherscan_contract_abi() {
+  address=$1
+
+  if [ "$DEBUG_OUTPUT" == "true" ]; then
+    echo "Fetching Ethereum contract ABI from etherscan: ${address}"
+  fi
+
+  abi=$(curl --silent https://api.etherscan.io/api?module=contract&action=getabi&address=${address} | python -c "import sys, json; print json.load(sys.stdin)['result']")
 
   if [ ! -z "$abi" ]; then
+    if [ "$DEBUG_OUTPUT" == "true" ]; then
+      echo "DEBUG: Retrieved abi ${abi} for contract at address: ${address}"
+    fi
+
     echo "${abi}" > $CACHE_PATH/${address}/abi
   fi
 }
 
 fetch_rpc_contract() {
   address=$1
-  echo "FATAL: JSON RPC not yet implemented"
-  exit 1
+  block=$2
+  if [ -z "$block" ]; then
+    block="latest"
+  fi
+
+  bytecode=$(curl --silent -X POST $JSON_RPC_ENDPOINT --data "{\"jsonrpc\": \"2.0\", \"method\": \"eth_getCode\", \"params\": [\"${address}\", \"${block}\"], \"id\": 1}" | python -c "import sys, json; print json.load(sys.stdin)['result']")
+  echo "${bytecode}" > $CACHE_PATH/${address}/bytecode
+
+  if [ "$DEBUG_OUTPUT" == "true" ]; then
+    echo "DEBUG: Retrieved bytecode ${bytecode} for contract at address: ${address}"
+  fi
+
+  fetch_etherscan_contract_abi $address
 }
 
 fetch_contracts() {
@@ -149,7 +170,14 @@ fetch_contracts() {
 }
 
 touch_contract() {
+  address=$1
+  creation_block=$2
+
   mkdir -p $CACHE_PATH/${address}
+
+  if [ ! -z "$creation_block" ]; then
+    echo "${creation_block}" > $CACHE_PATH/${address}/.creation_block
+  fi
 }
 
 touch_etherscan_contracts() {
@@ -167,8 +195,40 @@ touch_etherscan_contracts() {
 }
 
 touch_rpc_contracts() {
-  echo "FATAL: JSON RPC not yet implemented"
-  exit 1
+  # TODO-- calculate cached_block & historical_scan_complete
+  block=$(($(curl --silent -H 'content-type: application/json' -X POST $JSON_RPC_ENDPOINT --data "{\"jsonrpc\": \"2.0\", \"method\": \"eth_blockNumber\", \"params\": [], \"id\": 83}" | awk -F\" '{print toupper($10)}')))
+
+  while [ $block -gt 0 ]
+  do
+    hex=$(echo "obase=16; ${block}" | bc)
+
+    if [ "$DEBUG_OUTPUT" == "true" ]; then
+      echo "Fetching block ${hex} via JSON-RPC"
+    fi
+
+    transactions=($(curl --silent -H 'content-type: application/json' -X POST $JSON_RPC_ENDPOINT --data "{\"jsonrpc\": \"2.0\", \"method\": \"eth_getBlockByNumber\", \"params\": [\"0x${hex}\", true], \"id\": 1}" | python -c "import sys, json; txns = json.load(sys.stdin)['result']['transactions']; print '\n'.join(map(lambda tx: tx['hash'], txns))"))
+
+    if [ "$DEBUG_OUTPUT" == "true" ]; then
+      echo "Fetched ${transactions[@]} transactions for block 0x${hex}"
+    fi
+
+    for txn_hash in "${transactions[@]}"; do
+      if [ "$DEBUG_OUTPUT" == "true" ]; then
+        echo "Fetching transaction ${txn_hash}"
+      fi
+
+      contract_address=$(curl --silent -H 'content-type: application/json' -X POST $JSON_RPC_ENDPOINT --data "{\"jsonrpc\": \"2.0\", \"method\": \"eth_getTransactionReceipt\", \"params\": [\"${txn_hash}\"], \"id\": 1}" | python -c "import sys, json; print json.load(sys.stdin)['result']['contractAddress']" | awk '{gsub("None", "", $0); print $0}')
+      if [ ! -z "$contract_address" ]; then
+        if [ "$DEBUG_OUTPUT" == "true" ]; then
+          echo "Transaction ${txn_hash} created contract: ${contract_address}"
+        fi
+
+        touch_contract $contract_address "0x${hex}"
+      fi
+    done
+
+    block=$((block - 1))
+  done
 }
 
 touch_contracts() {
