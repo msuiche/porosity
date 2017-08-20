@@ -667,6 +667,7 @@ VMState::executeInstruction(
             pushStack(reg);
             break;
         }
+        
         default:
             printf("%s: NOT_IMPLEMENTED: %s\n", __FUNCTION__, info.name.c_str());
             return false;
@@ -731,6 +732,10 @@ VMState::isEndOfBlock(
         case Instruction::STOP:
         case Instruction::INVALID:
             return true;
+        break;
+            
+        default:
+            return false;
         break;
     }
 
@@ -810,6 +815,9 @@ VMState::executeBlock(
                 _block->InheritFlags |= NoMoreSSTORE;
                 break;
             }
+                
+            default:
+                break;
         }
 
         bool ret = executeInstruction(opcde->offInfo.offset, opcde->offInfo.inst, opcde->offInfo.data, false);

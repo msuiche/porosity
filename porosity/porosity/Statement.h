@@ -151,6 +151,9 @@ public:
             case ConditionIsNotZero:
                 result += string(operators[m_cond]) + m_op1.exp;
             break;
+                    
+            default:
+                break;
             }
 
             result += ")";
