@@ -5,3 +5,4 @@ boost.1.63.0.0
 .cache
 .vscode
 *.o
+/porosity/macos/Build
