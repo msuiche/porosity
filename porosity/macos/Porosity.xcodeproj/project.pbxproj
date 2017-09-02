@@ -1,0 +1,345 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		F9915D901F49F9FF00073E87 /* BasicBlocks.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D731F49F9FF00073E87 /* BasicBlocks.cpp */; };
+		F9915D911F49F9FF00073E87 /* CommonData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D751F49F9FF00073E87 /* CommonData.cpp */; };
+		F9915D921F49F9FF00073E87 /* Contract.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D771F49F9FF00073E87 /* Contract.cpp */; };
+		F9915D931F49F9FF00073E87 /* Debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D791F49F9FF00073E87 /* Debug.cpp */; };
+		F9915D941F49F9FF00073E87 /* Disassm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D7B1F49F9FF00073E87 /* Disassm.cpp */; };
+		F9915D951F49F9FF00073E87 /* Instruction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D7E1F49F9FF00073E87 /* Instruction.cpp */; };
+		F9915D961F49F9FF00073E87 /* Output.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D821F49F9FF00073E87 /* Output.cpp */; };
+		F9915D971F49F9FF00073E87 /* Porosity.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D841F49F9FF00073E87 /* Porosity.cpp */; };
+		F9915D981F49F9FF00073E87 /* SHA3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D871F49F9FF00073E87 /* SHA3.cpp */; };
+		F9915D991F49F9FF00073E87 /* Statement.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D891F49F9FF00073E87 /* Statement.cpp */; };
+		F9915D9A1F49F9FF00073E87 /* Utils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D8B1F49F9FF00073E87 /* Utils.cpp */; };
+		F9915D9B1F49F9FF00073E87 /* VMState.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9915D8E1F49F9FF00073E87 /* VMState.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F9915D3C1F49F97A00073E87 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		F9915D3E1F49F97A00073E87 /* Porosity */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Porosity; sourceTree = BUILT_PRODUCTS_DIR; };
+		F9915D721F49F9FF00073E87 /* Assert.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Assert.h; sourceTree = "<group>"; };
+		F9915D731F49F9FF00073E87 /* BasicBlocks.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BasicBlocks.cpp; sourceTree = "<group>"; };
+		F9915D741F49F9FF00073E87 /* Common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
+		F9915D751F49F9FF00073E87 /* CommonData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommonData.cpp; sourceTree = "<group>"; };
+		F9915D761F49F9FF00073E87 /* CommonData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommonData.h; sourceTree = "<group>"; };
+		F9915D771F49F9FF00073E87 /* Contract.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Contract.cpp; sourceTree = "<group>"; };
+		F9915D781F49F9FF00073E87 /* Contract.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Contract.h; sourceTree = "<group>"; };
+		F9915D791F49F9FF00073E87 /* Debug.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Debug.cpp; sourceTree = "<group>"; };
+		F9915D7A1F49F9FF00073E87 /* Debug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Debug.h; sourceTree = "<group>"; };
+		F9915D7B1F49F9FF00073E87 /* Disassm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Disassm.cpp; sourceTree = "<group>"; };
+		F9915D7C1F49F9FF00073E87 /* Disassm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Disassm.h; sourceTree = "<group>"; };
+		F9915D7D1F49F9FF00073E87 /* FixedHash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FixedHash.h; sourceTree = "<group>"; };
+		F9915D7E1F49F9FF00073E87 /* Instruction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Instruction.cpp; sourceTree = "<group>"; };
+		F9915D7F1F49F9FF00073E87 /* Instruction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Instruction.h; sourceTree = "<group>"; };
+		F9915D811F49F9FF00073E87 /* json.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = json.hpp; sourceTree = "<group>"; };
+		F9915D821F49F9FF00073E87 /* Output.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Output.cpp; sourceTree = "<group>"; };
+		F9915D831F49F9FF00073E87 /* Output.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Output.h; sourceTree = "<group>"; };
+		F9915D841F49F9FF00073E87 /* Porosity.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Porosity.cpp; sourceTree = "<group>"; };
+		F9915D851F49F9FF00073E87 /* Porosity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Porosity.h; sourceTree = "<group>"; };
+		F9915D861F49F9FF00073E87 /* PorosityDefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PorosityDefs.h; sourceTree = "<group>"; };
+		F9915D871F49F9FF00073E87 /* SHA3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SHA3.cpp; sourceTree = "<group>"; };
+		F9915D881F49F9FF00073E87 /* SHA3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SHA3.h; sourceTree = "<group>"; };
+		F9915D891F49F9FF00073E87 /* Statement.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Statement.cpp; sourceTree = "<group>"; };
+		F9915D8A1F49F9FF00073E87 /* Statement.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Statement.h; sourceTree = "<group>"; };
+		F9915D8B1F49F9FF00073E87 /* Utils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Utils.cpp; sourceTree = "<group>"; };
+		F9915D8C1F49F9FF00073E87 /* Utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Utils.h; sourceTree = "<group>"; };
+		F9915D8D1F49F9FF00073E87 /* vector_ref.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = vector_ref.h; sourceTree = "<group>"; };
+		F9915D8E1F49F9FF00073E87 /* VMState.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VMState.cpp; sourceTree = "<group>"; };
+		F9915D8F1F49F9FF00073E87 /* VMState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VMState.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F9915D3B1F49F97A00073E87 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		F9915D351F49F97A00073E87 = {
+			isa = PBXGroup;
+			children = (
+				F9915D401F49F97A00073E87 /* Porosity */,
+				F9915D3F1F49F97A00073E87 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F9915D3F1F49F97A00073E87 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F9915D3E1F49F97A00073E87 /* Porosity */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F9915D401F49F97A00073E87 /* Porosity */ = {
+			isa = PBXGroup;
+			children = (
+				F9915D721F49F9FF00073E87 /* Assert.h */,
+				F9915D731F49F9FF00073E87 /* BasicBlocks.cpp */,
+				F9915D741F49F9FF00073E87 /* Common.h */,
+				F9915D751F49F9FF00073E87 /* CommonData.cpp */,
+				F9915D761F49F9FF00073E87 /* CommonData.h */,
+				F9915D771F49F9FF00073E87 /* Contract.cpp */,
+				F9915D781F49F9FF00073E87 /* Contract.h */,
+				F9915D791F49F9FF00073E87 /* Debug.cpp */,
+				F9915D7A1F49F9FF00073E87 /* Debug.h */,
+				F9915D7B1F49F9FF00073E87 /* Disassm.cpp */,
+				F9915D7C1F49F9FF00073E87 /* Disassm.h */,
+				F9915D7D1F49F9FF00073E87 /* FixedHash.h */,
+				F9915D7E1F49F9FF00073E87 /* Instruction.cpp */,
+				F9915D7F1F49F9FF00073E87 /* Instruction.h */,
+				F9915D801F49F9FF00073E87 /* json */,
+				F9915D821F49F9FF00073E87 /* Output.cpp */,
+				F9915D831F49F9FF00073E87 /* Output.h */,
+				F9915D841F49F9FF00073E87 /* Porosity.cpp */,
+				F9915D851F49F9FF00073E87 /* Porosity.h */,
+				F9915D861F49F9FF00073E87 /* PorosityDefs.h */,
+				F9915D871F49F9FF00073E87 /* SHA3.cpp */,
+				F9915D881F49F9FF00073E87 /* SHA3.h */,
+				F9915D891F49F9FF00073E87 /* Statement.cpp */,
+				F9915D8A1F49F9FF00073E87 /* Statement.h */,
+				F9915D8B1F49F9FF00073E87 /* Utils.cpp */,
+				F9915D8C1F49F9FF00073E87 /* Utils.h */,
+				F9915D8D1F49F9FF00073E87 /* vector_ref.h */,
+				F9915D8E1F49F9FF00073E87 /* VMState.cpp */,
+				F9915D8F1F49F9FF00073E87 /* VMState.h */,
+			);
+			name = Porosity;
+			path = ../porosity;
+			sourceTree = SOURCE_ROOT;
+		};
+		F9915D801F49F9FF00073E87 /* json */ = {
+			isa = PBXGroup;
+			children = (
+				F9915D811F49F9FF00073E87 /* json.hpp */,
+			);
+			path = json;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F9915D3D1F49F97A00073E87 /* Porosity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F9915D451F49F97A00073E87 /* Build configuration list for PBXNativeTarget "Porosity" */;
+			buildPhases = (
+				F9915D3A1F49F97A00073E87 /* Sources */,
+				F9915D3B1F49F97A00073E87 /* Frameworks */,
+				F9915D3C1F49F97A00073E87 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Porosity;
+			productName = Porosity;
+			productReference = F9915D3E1F49F97A00073E87 /* Porosity */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F9915D361F49F97A00073E87 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0830;
+				ORGANIZATIONNAME = "Slava Karpenko";
+				TargetAttributes = {
+					F9915D3D1F49F97A00073E87 = {
+						CreatedOnToolsVersion = 8.3.3;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = F9915D391F49F97A00073E87 /* Build configuration list for PBXProject "Porosity" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = F9915D351F49F97A00073E87;
+			productRefGroup = F9915D3F1F49F97A00073E87 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F9915D3D1F49F97A00073E87 /* Porosity */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F9915D3A1F49F97A00073E87 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F9915D981F49F9FF00073E87 /* SHA3.cpp in Sources */,
+				F9915D911F49F9FF00073E87 /* CommonData.cpp in Sources */,
+				F9915D931F49F9FF00073E87 /* Debug.cpp in Sources */,
+				F9915D951F49F9FF00073E87 /* Instruction.cpp in Sources */,
+				F9915D9B1F49F9FF00073E87 /* VMState.cpp in Sources */,
+				F9915D921F49F9FF00073E87 /* Contract.cpp in Sources */,
+				F9915D941F49F9FF00073E87 /* Disassm.cpp in Sources */,
+				F9915D901F49F9FF00073E87 /* BasicBlocks.cpp in Sources */,
+				F9915D991F49F9FF00073E87 /* Statement.cpp in Sources */,
+				F9915D9A1F49F9FF00073E87 /* Utils.cpp in Sources */,
+				F9915D971F49F9FF00073E87 /* Porosity.cpp in Sources */,
+				F9915D961F49F9FF00073E87 /* Output.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F9915D431F49F97A00073E87 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		F9915D441F49F97A00073E87 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		F9915D461F49F97A00073E87 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYSTEM_HEADER_SEARCH_PATHS = /usr/local/include;
+			};
+			name = Debug;
+		};
+		F9915D471F49F97A00073E87 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SYSTEM_HEADER_SEARCH_PATHS = /usr/local/include;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F9915D391F49F97A00073E87 /* Build configuration list for PBXProject "Porosity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F9915D431F49F97A00073E87 /* Debug */,
+				F9915D441F49F97A00073E87 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F9915D451F49F97A00073E87 /* Build configuration list for PBXNativeTarget "Porosity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F9915D461F49F97A00073E87 /* Debug */,
+				F9915D471F49F97A00073E87 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F9915D361F49F97A00073E87 /* Project object */;
+}

@@ -244,6 +244,9 @@ Contract::assignXrefToBlocks(
                 if (g_VerboseLevel >= 3) printf("%s: branch @ 0x%08X\n", __FUNCTION__, basicBlockOffset);
                 break;
             }
+                
+            default:
+                break;
         }
     }
 
@@ -585,6 +588,8 @@ Contract::getGraphNodeColor(
             return "dodgerblue";
         case ExitNode:
             return "red";
+        default:
+            return "";
     }
 
     return "";
@@ -1015,6 +1020,8 @@ Contract::decompileBlock(
             exp = "return;";
             result = false;
             break;
+        default:
+            break;
         }
         if (exp.size()) {
             //DEPTH(_depth);
@@ -1101,6 +1108,8 @@ Contract::IsRuntimeCode(
                 break;
             case Instruction::RETURN:
                 leaveFunction = true;
+                break;
+            default:
                 break;
         }
     });
