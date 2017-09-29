@@ -51,7 +51,7 @@ auto
 Contract::addBasicBlock(
     uint32_t _offset,
     uint32_t _size
-) {
+) -> map<unsigned int, _BasicBlockInfo>::iterator {
     BasicBlockInfo newEntry = { 0 };
     newEntry.offset = _offset;
     newEntry.size = _size;
@@ -1013,7 +1013,12 @@ Contract::decompileBlock(
             break;
         }
         case Instruction::RETURN:
-            exp = "return " + i->stack[0].name + ";";
+            if (i->stack.size()) {
+                // the final return of the smart contract has an empty stack!
+                exp = "return " + i->stack[0].name + ";";
+            } else {
+                exp = "exit;";
+            }
             result = false;
             break;
         case Instruction::STOP:
