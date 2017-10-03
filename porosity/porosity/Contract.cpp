@@ -993,32 +993,38 @@ Contract::decompileBlock(
         case Instruction::SSTORE:
         {
 
-            string valueName = "";
-            switch (i->stack[1].type) {
-                case ConstantComputed:
-                case Constant:
-                {
-                    stringstream mod;
-                    mod << "0x" << std::hex << i->stack[1].value;
-                    valueName = mod.str();
-                    // mod << "0x" << std::hex << second->value;
-                    break;
+            if (i->stack.size()) {
+
+                string valueName = "";
+                switch (i->stack[1].type) {
+                    case ConstantComputed:
+                    case Constant:
+                    {
+                        stringstream mod;
+                        mod << "0x" << std::hex << i->stack[1].value;
+                        valueName = mod.str();
+                        // mod << "0x" << std::hex << second->value;
+                        break;
+                    }
+                    default:
+                        valueName = (i->stack[1].exp.size()) ? i->stack[1].exp : i->stack[1].name;
+                        break;
                 }
-                default:
-                    valueName = (i->stack[1].exp.size()) ? i->stack[1].exp : i->stack[1].name;
-                    break;
+                exp = "store[" + i->stack[0].name + "] = " + valueName + ";";
+            } else {
+                exp = "store[?];";
             }
-            exp = "store[" + i->stack[0].name + "] = " + valueName + ";";
+
             if (_block->Flags & BlockFlags::NoMoreSSTORE) errCode |= DCode_Err_ReentrantVulnerablity;
             break;
         }
         case Instruction::RETURN:
             if (i->stack.size()) {
-                // the final return of the smart contract has an empty stack!
                 exp = "return " + i->stack[0].name + ";";
             } else {
-                exp = "exit;";
+                exp = "return;";
             }
+
             result = false;
             break;
         case Instruction::STOP:
