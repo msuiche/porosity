@@ -5,4 +5,4 @@ uint16_t GetConsoleTextAttribute(uint32_t hConsole);
 #define C_RESET "[0m"
 #endif
 
-void Red(char *Format, ...);
+void Red(const char *Format, ...);

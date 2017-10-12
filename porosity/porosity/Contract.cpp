@@ -37,7 +37,7 @@ Contract::printInstructions(
 
     if (m_byteCodeRuntime.empty()) return "";
 
-    printf("- Total byte code size: 0x%x (%d)\n\n", m_byteCodeRuntime.size(), m_byteCodeRuntime.size());
+    printf("- Total byte code size: 0x%lx (%lu)\n\n", m_byteCodeRuntime.size(), m_byteCodeRuntime.size());
 
     dev::eth::eachInstruction(m_byteCodeRuntime, [&](uint32_t _offset, Instruction _instr, u256 const& _data) {
         printBranchName(_offset);
@@ -562,7 +562,7 @@ Contract::printBlockReferences(
     // DEBUG
     for (auto it = m_listbasicBlockInfo.begin(); it != m_listbasicBlockInfo.end(); ++it) {
         auto refs = it->second.references;
-        printf("(dest = 0x%08X, numrefs = 0x%08X, refs = {", it->first, refs.size());
+        printf("(dest = 0x%08X, numrefs = 0x%08lX, refs = {", it->first, refs.size());
         for (auto ref = refs.begin(); ref != refs.end(); ++ref) {
             printf("0x%08x", ref->second.offset);
         }
@@ -838,7 +838,7 @@ Contract::printFunctions(
             auto func = m_publicFunctions.find(it->second.fnAddrHash);
             string name = "";
             if (func != m_publicFunctions.end()) name = func->second.name;
-            printf("[+] Hash: 0x%08X (%s) (%d references)\n", it->second.fnAddrHash, name.c_str(), it->second.references.size());
+            printf("[+] Hash: 0x%08X (%s) (%lu references)\n", it->second.fnAddrHash, name.c_str(), it->second.references.size());
             // getFunction(it->second.fnAddrHash);
         }
     }
