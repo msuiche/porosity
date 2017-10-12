@@ -126,6 +126,22 @@ parse(
         else if ((kw == "--code") && arg.size()) {
             out->codeByte = fromHex(arg);
         }
+        else if ((kw == "--code-file") && arg.size()) {
+            string str;
+
+            ifstream file(arg);
+            if (file.good()) {
+                file.seekg(0, std::ios::end);
+                str.reserve(file.tellg());
+                file.seekg(0, std::ios::beg);
+
+                str.assign((std::istreambuf_iterator<char>(file)),
+                        std::istreambuf_iterator<char>());
+
+                out->codeByte = fromHex(str);
+                out->codeByteRuntime = fromHex(str);
+            }
+        }
         else if ((kw == "--disassm") || (kw == "--disasm")) {
             out->method |= MethodDisassm;
         }
@@ -177,6 +193,7 @@ help() {
     printf("    --debug                             - Enable debug mode. (testing only - no input parameter needed.)\n\n");
     printf("Input parameters:\n");
     printf("    --code <bytecode>                   - Ethereum bytecode. (mandatory)\n");
+    printf("    --code-file <filename>              - Read ethereum bytecode from file\n");
     printf("    --arguments <arguments>             - Ethereum arguments to pass to the function. (optional, default data set provided if not provided.)\n");
     printf("    --abi <arguments>                   - Ethereum Application Binary Interface (ABI) in JSON format. (optional but recommended)\n");
     printf("    --hash <hashmethod>                 - Work on a specific function, can be retrieved wit --list. (optional)\n");
