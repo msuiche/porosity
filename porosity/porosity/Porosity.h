@@ -21,6 +21,8 @@ Revision History:
 #include <vector>
 #include <boost/dynamic_bitset.hpp>
 
+#include "Common.h"
+
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/algorithm/string.hpp>
@@ -29,7 +31,6 @@ Revision History:
 
 #include "json/json.hpp"
 
-#include "Common.h"
 #include "CommonData.h"
 #include "Assert.h"
 #include "Output.h"
