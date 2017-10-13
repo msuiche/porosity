@@ -55,6 +55,8 @@ Contract::addBasicBlock(
     BasicBlockInfo newEntry = { 0 };
     newEntry.offset = _offset;
     newEntry.size = _size;
+	newEntry.nextDefault = NULL;
+	newEntry.nextJUMPI = NULL;
 
     auto newBlock = m_listbasicBlockInfo.insert(m_listbasicBlockInfo.begin(), pair<uint32_t, BasicBlockInfo>(_offset, newEntry));
 
@@ -380,10 +382,8 @@ Contract::walkAndConnectNodes(
     while (true) {
         auto block = m_listbasicBlockInfo.find(next); // getBlockAt()
         if (block == m_listbasicBlockInfo.end()) break;
-
-        if (block->second.walkedNode) break;
-
         next = block->second.dstDefault;
+		if (block->second.walkedNode) continue;
 
         // printf("hash = 0x%x, block = 0x%x, default = 0x%x, JUMPI = 0x%x\n", _hash, _block, block->second.dstDefault, block->second.dstJUMPI);
         if (block->second.dstJUMPI) {
@@ -398,10 +398,8 @@ Contract::walkAndConnectNodes(
                 block->second.dstDefault = exitNode->second;
             }
 
-            if (!block->second.nextDefault) {
-                block->second.nextDefault = getBlockAt(block->second.dstDefault);
-            }
-            break; // next
+            block->second.nextDefault = getBlockAt(block->second.dstDefault);
+		    break; // next
         }
     }
 }
