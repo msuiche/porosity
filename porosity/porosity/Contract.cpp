@@ -618,6 +618,7 @@ Contract::getGraphviz(
         string dstDefault_str = porosity::to_hstring(dstDefault);
         uint32_t symbolHash = it->second.fnAddrHash;
         string symbolName = symbolHash ? getFunctionName(symbolHash) : "loc_" + porosity::to_hstring(source);
+        string optLabelName = symbolHash ? ",label=\""+symbolName+"\"" : "";
         string defaultColor = dstIfTrue ? "red" : "black";
         uint32_t basicBlockSize = it->second.size;
 
@@ -634,7 +635,8 @@ Contract::getGraphviz(
             graph += "    \"" + source_str + "\"" + " -> " + "\"" + dstDefault_str + "\"" + " [color=\""+ defaultColor +"\"];\n";
         }
         if (dstIfTrue) {
-            graph += "    \"" + source_str + "\"" + " -> " + "\"" + ifTrue_str + "\"" + " [color=\"green\"];\n";
+            graph += "    \"" + source_str + "\"" + " -> " + "\"" + ifTrue_str + "\"" +
+                     " [color=\"green\"" + optLabelName + "];\n";
         }
 #if 0
         auto refs = it->second.references;
