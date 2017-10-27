@@ -192,10 +192,10 @@ void debug() {
         Contract JSON ABI
         [{"constant":true, "inputs" : [], "name" : "minter", "outputs" : [{"name":"", "type" : "address"}], "type" : "function"}, { "constant":tr
         ue,"inputs" : [{"name":"","type" : "address"}],"name" : "balances","outputs" : [{"name":"","type" : "uint256"}],"type" : "function" }
-        , { "constant":false,"inputs" : [{"name":"receiver","type" : "address"},{ "name":"amount","type" : "uint256" }],"name" : "mint","out
-        puts":[],"type":"function"},{"constant":false,"inputs":[{"name":"receiver","type":"address"},{"name":"amount","type":"ui
-        nt256"}],"name":"send","outputs":[],"type":"function"},{"inputs":[],"type":"constructor"},{"anonymous":false,"inputs":[{
-        "indexed" : false,"name" : "from","type" : "address" }, { "indexed":false,"name" : "to","type" : "address" }, { "indexed":false,"name" : "
+        , { "constant":false,"inputs" : [{"name":"receiver","type" : "address"},{ "name":"amount","type" : "uint256" }],"name" : "mint","out \
+        puts":[],"type":"function"},{"constant":false,"inputs":[{"name":"receiver","type":"address"},{"name":"amount","type":"ui \
+        nt256"}],"name":"send","outputs":[],"type":"function"},{"inputs":[],"type":"constructor"},{"anonymous":false,"inputs":[{ \
+        "indexed" : false,"name" : "from","type" : "address" }, { "indexed":false,"name" : "to","type" : "address" }, { "indexed":false,"name" : " \
         amount","type":"uint256"}],"name":"Sent","type":"event"}]
 #endif
 

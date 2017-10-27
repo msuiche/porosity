@@ -132,7 +132,7 @@ public:
         string result = "";
 
         if (m_stmt == StatementIf) {
-            char *operators[] = { "", "==", "!=", "!", "", "<", ">=", ">", "<=", 0 };
+            const char *operators[] = { "", "==", "!=", "!", "", "<", ">=", ">", "<=", 0 };
             result = "if";
 
             result += " (";
