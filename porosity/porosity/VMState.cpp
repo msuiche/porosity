@@ -312,7 +312,7 @@ VMState::executeInstruction(
         case Instruction::CALL:
         {
             if (m_stack.size() < 6) {
-                printf("*** ERROR *** STACK UNDERFLOW (%d elements < 6)\n", m_stack.size());
+                printf("*** ERROR *** STACK UNDERFLOW (%lu elements < 6)\n", m_stack.size());
                 return false;
             }
             // Stack[0] = gas limit (default = 0x2540B5EF0)
@@ -992,7 +992,7 @@ InstructionContext::getContextForInstruction(
         case Instruction::SMOD:
         case Instruction::EXP:
         {
-            char *operation[] = { "+", "*", "-", "/", "/", "%%", "%%", "invld", "invld", "**", 0 };
+            const char *operation[] = { "+", "*", "-", "/", "/", "%%", "%%", "invld", "invld", "**", 0 };
             int index = int(instr) - int(Instruction::ADD);
             /*exp = first->name + " = " + getDismangledRegisterName(first) + " "
             + operation[index] + " " + getDismangledRegisterName(second) + ";";*/
@@ -1027,7 +1027,7 @@ InstructionContext::getContextForInstruction(
         case Instruction::SGT:
         case Instruction::EQ:
         {
-            char *operation[] = { "<", ">", "<", ">", "==", 0 };
+            const char *operation[] = { "<", ">", "<", ">", "==", 0 };
             stringstream mod;
             bool isSigned = ((instr == Instruction::SLT) || (instr == Instruction::SGT));
             string signedParam = isSigned ? "(signed)" : "";
@@ -1093,7 +1093,7 @@ InstructionContext::getContextForInstruction(
         case Instruction::ADDMOD:
         case Instruction::MULMOD:
         {
-            char *operation[] = { "+", "*", 0 };
+            const char *operation[] = { "+", "*", 0 };
             int index = int(instr) - int(Instruction::ADDMOD);
             exp = first->name + " = (" + getDismangledRegisterName(first) + " " + operation[index];
             exp += " " + getDismangledRegisterName(second) + ") %% " + getDismangledRegisterName(third) + ";";

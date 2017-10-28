@@ -16,7 +16,7 @@ GetConsoleTextAttribute(
 }
 
 void
-Red(char *Format, ...)
+Red(const char *Format, ...)
 {
     HANDLE Handle;
     USHORT Color;
@@ -38,7 +38,7 @@ Red(char *Format, ...)
 #include <stdarg.h>
 
 void
-Red(char *Format, ...)
+Red(const char *Format, ...)
 {
     va_list va;
 
