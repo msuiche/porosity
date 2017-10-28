@@ -121,21 +121,8 @@ parse(
             out->method |= MethodListFunctions;
         }
         else if (((kw == "--runtime-code") || (kw == "--code")) && arg.size()) {
-            // ToDo: why do we have out->codeByte AND out->codeByteRuntime
+            // ToDo: why do we have out->codeByte AND out->codeByteRuntime? the former does not seem to get used.
             out->codeByteRuntime = fromHex(arg);
-        }
-        else if ((kw == "--code-file") && arg.size()) {
-            if (out->codeByteRuntime.empty()) {
-                // read from file if neither --runtime-code nor --code have been specified
-                ifstream file(arg);
-                stringstream s;
-                if (!file.is_open()) {
-                    printf("%s: Can't open file.\n", __FUNCTION__);
-                }
-                s << file.rdbuf();
-                file.close();
-                out->codeByteRuntime = fromHex(s.str());
-            }
         }
         else if ((kw == "--code-file") && arg.size()) {
             string str;
