@@ -124,6 +124,10 @@ parse(
             // ToDo: why do we have out->codeByte AND out->codeByteRuntime? the former does not seem to get used.
             out->codeByteRuntime = fromHex(arg);
         }
+        else if ((kw == "--code") && arg.size()) {
+            // ToDo: this case never matches. see the one above
+            out->codeByte = fromHex(arg);
+        }
         else if ((kw == "--code-file") && arg.size()) {
             string str;
 
