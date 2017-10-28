@@ -222,16 +222,12 @@ VMState::executeInstruction(
             m_stack[0] = reg;
             break;
         }
-        
+        /*
         case Instruction::CALLDATASIZE:
         {
-            StackRegister reg = { "", "", UserInput, 0, 0 };
-            reg.value = m_data.size();
-            reg.type = UserInput;
-            pushStack(reg);
             break;
         }
-        
+        */
         case Instruction::MSTORE:
         {
             uint32_t offset = int(GetStackEntryById(0).value);
@@ -298,15 +294,6 @@ VMState::executeInstruction(
             //GetStackEntryById(0).value = u256(dev::keccak256(GetStackEntryById(0).value));
             GetStackEntryById(0) = *getMemoryData(offset);
             m_stack[0].type = RegTypeLabelSha3;
-            break;
-        }
-        case Instruction::BALANCE:
-        {
-            StackRegister reg = { "", "", ConstantComputed, 0, 0 };
-            reg.value = 10000000;
-            reg.type = ConstantComputed;
-            pushStack(reg);
-
             break;
         }
         case Instruction::CALL:
