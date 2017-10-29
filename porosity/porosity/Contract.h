@@ -29,7 +29,7 @@ public:
             m_byteCodeRuntime = bytecode;
         }
         else {
-            // In the caes IsRuntimeCode() didn't return the offset we move on.
+            // In the case IsRuntimeCode() didn't return the offset we move on.
             if (!m_runtimeOffset) return;
 
             bytes runtimeCode(bytecode.begin() + m_runtimeOffset, bytecode.end());
@@ -121,7 +121,7 @@ public:
     addBasicBlock(
         uint32_t _offset,
         uint32_t _size
-    );
+    ) -> map<unsigned int, _BasicBlockInfo>::iterator;
 
     uint32_t
     getInstructionIndexAtOffset(
