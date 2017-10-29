@@ -181,12 +181,47 @@ namespace dev
             PUTLOCAL,           ///< pop top of stack to local variable
             GETLOCAL,           ///< push local variable to top of stack
 
+            XADD = 0xc1,        ///< addition operation
+            XMUL,               ///< multiplication operation
+            XSUB,               ///< subtraction operation
+            XDIV,               ///< integer division operation
+            XSDIV,              ///< signed integer division operation
+            XMOD,               ///< modulo remainder operation
+            XSMOD,              ///< signed modulo remainder operation
+            XLT = 0xd0,         ///< less-than comparision
+            XGT,                ///< greater-than comparision
+            XSLT,               ///< signed less-than comparision
+            XSGT,               ///< signed greater-than comparision
+            XEQ,                ///< equality comparision
+            XISZERO,            ///< simple not operator
+            XAND,               ///< bitwise AND operation
+            XOOR,               ///< bitwise OR operation
+            XXOR,               ///< bitwise XOR operation
+            XNOT,               ///< bitwise NOT operation
+            XSHL = 0xdb,        ///< shift left operation
+            XSHR,               ///< shift right operation
+            XSAR,               ///< shift arithmetic right operation
+            XROL,               ///< rotate left operation
+            XROR,               ///< rotate right operation
+            XPUSH = 0xe0,       ///< push vector to stack
+            XMLOAD,             ///< load vector from memory
+            XMSTORE,            ///< save vector to memory
+            XSLOAD = 0xe4,      ///< load vector from storage
+            XSSTORE,            ///< save vector to storage
+            XVTOWIDE,           ///< convert vector to wide integer
+            XWIDETOV,           ///< convert wide integer to vector
+            XGET,               ///< get data from vector
+            XPUT,               ///< put data in vector
+            XSWIZZLE,           ///< permute data in vector
+            XSHUFFLE,           ///< permute data in two vectors
+
             CREATE = 0xf0,      ///< create a new account with associated code
             CALL,               ///< message-call into an account
             CALLCODE,           ///< message-call with another account's code only
             RETURN,             ///< halt execution returning output data
             DELEGATECALL,       ///< like CALLCODE but keeps caller's value and sender
             STATICCALL = 0xfa,	///< like CALL except state changing operation are not permitted (will throw)
+            CREATE2 = 0xfb,		///< create a new account with associated code. sha3((sender + salt + sha3(code))
             REVERT = 0xfd,      ///< stop execution and revert state changes, without consuming all provided gas
             INVALID = 0xfe,     ///< dedicated invalid instruction
             SUICIDE = 0xff      ///< halt execution and register account for later deletion
