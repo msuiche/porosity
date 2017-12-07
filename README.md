@@ -476,4 +476,10 @@ LOC: 3
 
 `make`
 
+*Note*: you may need to install [boost c++](http://www.boost.org/) dependency.
 
+Using HomeBrew:
+`brew install boost`
+
+Using MacPorts:
+`sudo port install boost`
