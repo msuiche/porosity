@@ -51,7 +51,7 @@ auto
 Contract::addBasicBlock(
     uint32_t _offset,
     uint32_t _size
-) {
+) -> map<unsigned int, _BasicBlockInfo>::iterator {
     BasicBlockInfo newEntry = { 0 };
     newEntry.offset = _offset;
     newEntry.size = _size;
@@ -992,7 +992,7 @@ Contract::decompileBlock(
             break;
         case Instruction::SSTORE:
         {
-            
+
             if (i->stack.size()) {
 
                 string valueName = "";
@@ -1014,10 +1014,9 @@ Contract::decompileBlock(
             } else {
                 exp = "store[?];";
             }
-            
+
             if (_block->Flags & BlockFlags::NoMoreSSTORE) errCode |= DCode_Err_ReentrantVulnerablity;
             break;
-
         }
         case Instruction::RETURN:
             if (i->stack.size()) {
@@ -1025,7 +1024,7 @@ Contract::decompileBlock(
             } else {
                 exp = "return;";
             }
-                
+
             result = false;
             break;
         case Instruction::STOP:
