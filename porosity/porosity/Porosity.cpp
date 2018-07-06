@@ -203,7 +203,8 @@ help() {
     printf("    --code <bytecode>                   - Ethereum bytecode. (mandatory unless --code-file or --debug is given)\n");
     printf("    --code-file <filename>              - Read ethereum bytecode from file\n");
     printf("    --arguments <arguments>             - Ethereum arguments to pass to the function. (optional, default data set provided if not provided.)\n");
-    printf("    --abi <arguments>                   - Ethereum Application Binary Interface (ABI) in JSON format. (optional but recommended)\n");
+    printf("    --abi <json-string>                 - Ethereum Application Binary Interface (ABI) in JSON format. (optional but recommended)\n");
+    printf("    --abi-file <JSON-filename>          - Read Ethereum Application Binary Interface (ABI) in JSON format from file. (optional but recommended)\n");
     printf("    --hash <hashmethod>                 - Work on a specific function, can be retrieved with --list. (optional)\n");
     printf("\n");
     printf("Features:\n");
