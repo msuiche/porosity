@@ -142,6 +142,11 @@ parse(
 
                 out->codeByte = fromHex(str);
                 out->codeByteRuntime = fromHex(str);
+		if (out->codeByteRuntime.empty())
+		{
+		    printf("%s: conversion to hex in --code-file option failed.\n", __FUNCTION__);
+		    return false;
+		}
             }
         }
         else if ((kw == "--disassm") || (kw == "--disasm")) {
@@ -175,7 +180,8 @@ parse(
     //
     if (!out->debugMode) {
         if (out->codeByteRuntime.empty()) {
-            printf("%s: Please at least provide some byte code (--code) or run it in debug mode (--debug) with pre-configured inputs.\n", __FUNCTION__);
+            printf("%s: Please at least provide some byte code (--code or --code-file) or run it in debug mode (--debug) to use the pre-configured inputs.\n",
+		   __FUNCTION__);
             return false;
         }
 
@@ -192,13 +198,13 @@ help() {
     printf("\n");
     printf("Usage: porosity [options]\n");
     printf("Debug:\n");
-    printf("    --debug                             - Enable debug mode. (testing only - no input parameter needed.)\n\n");
+    printf("    --debug                             - Enable debug mode. (testing using predefined inputs; other parameters are ignored.)\n\n");
     printf("Input parameters:\n");
-    printf("    --code <bytecode>                   - Ethereum bytecode. (mandatory)\n");
+    printf("    --code <bytecode>                   - Ethereum bytecode. (mandatory unless --code-file or --debug is given)\n");
     printf("    --code-file <filename>              - Read ethereum bytecode from file\n");
     printf("    --arguments <arguments>             - Ethereum arguments to pass to the function. (optional, default data set provided if not provided.)\n");
     printf("    --abi <arguments>                   - Ethereum Application Binary Interface (ABI) in JSON format. (optional but recommended)\n");
-    printf("    --hash <hashmethod>                 - Work on a specific function, can be retrieved wit --list. (optional)\n");
+    printf("    --hash <hashmethod>                 - Work on a specific function, can be retrieved with --list. (optional)\n");
     printf("\n");
     printf("Features:\n");
     printf("    --list                              - List identified methods/functions.\n");

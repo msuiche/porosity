@@ -93,13 +93,28 @@ std::string dev::randomWord()
 	return ret;
 }
 
+// Converts  string _s to bytes. _s can optionally have a leading
+// "0x". Interior "\n" and " " in the string are ignored.
 bytes dev::fromHex(std::string const& _s, WhenError _throw)
 {
+	// Copy s and strip optional leading "0x"
 	unsigned s = (_s.size() >= 2 && _s[0] == '0' && _s[1] == 'x') ? 2 : 0;
-	std::vector<uint8_t> ret;
-	ret.reserve((_s.size() - s + 1) / 2);
+	std::string s2 = _s;
 
-	if (_s.size() % 2)
+	std::vector<uint8_t> ret;
+
+	// Strip whitespace
+	int j = -1;
+	for (int i = s; i < _s.size(); i++) {
+		if (_s[i] == '\n' || _s[i] == ' ') continue;
+		j++;
+		if (i != j) s2[j] = _s[i];
+	}
+
+	s2.resize(j+1);
+	ret.reserve((s2.size() + 1) / 2);
+
+	if (s2.size() % 2)
 	{
 		int h = _fromHex(_s[s++]);
 		if (h != -1)
@@ -109,10 +124,10 @@ bytes dev::fromHex(std::string const& _s, WhenError _throw)
 		else
 			return bytes();
 	}
-	for (unsigned i = s; i < _s.size(); i += 2)
+	for (unsigned i = s; i < s2.size(); i += 2)
 	{
-		int h = _fromHex(_s[i]);
-		int l = _fromHex(_s[i + 1]);
+		int h = _fromHex(s2[i]);
+		int l = _fromHex(s2[i + 1]);
 		if (h != -1 && l != -1)
 			ret.push_back((byte)(h * 16 + l));
 		else if (_throw == WhenError::Throw)
