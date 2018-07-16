@@ -189,7 +189,11 @@ parse(
             out->arguments = defaultArguments;
         }
     }
-
+    if (!out->method) {
+      printf("%s: Please at least output method (--list or --disassm) or run it in debug mode (--debug) to use the pre-configured inputs.\n",
+	     __FUNCTION__);
+      return false;
+    }
     return true;
 }
 
