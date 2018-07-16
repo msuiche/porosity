@@ -211,9 +211,9 @@ help() {
     printf("    --abi-file <JSON-filename>          - Read Ethereum Application Binary Interface (ABI) in JSON format from file. (optional but recommended)\n");
     printf("    --hash <hashmethod>                 - Work on a specific function, can be retrieved with --list. (optional)\n");
     printf("\n");
-    printf("Features:\n");
+    printf("Output Features:\n");
     printf("    --list                              - List identified methods/functions.\n");
-    printf("    --disassm                           - Disassemble the bytecode.\n");
+    printf("    --disassm | --disasm                - Disassemble the bytecode.\n");
     printf("    --single-step                       - Execute the byte code through our VM.\n");
     printf("    --cfg                               - Generate a the control flow graph in Graphviz format.\n");
     printf("    --cfg-full                          - Generate a the control flow graph in Graphviz format (including instructions)\n");
