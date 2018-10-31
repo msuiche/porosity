@@ -1,4 +1,6 @@
 # porosity
+## Alternatives
+We recommend [JEB Decompiler for smart-contracts](https://www.pnfsoftware.com/blog/ethereum-smart-contract-decompiler/).
 
 ## Getting Started
 
