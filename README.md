@@ -1,6 +1,8 @@
 # porosity
 ## Alternatives
-We recommend [JEB Decompiler for smart-contracts](https://www.pnfsoftware.com/blog/ethereum-smart-contract-decompiler/) by Nicolas Failliere.
+As you can see Porosity is now unmaintained, we recommend [JEB Decompiler for smart-contracts](https://www.pnfsoftware.com/blog/ethereum-smart-contract-decompiler/) by Nicolas Failliere as an alternative.
+
+Why is it unmaintained? After some initial research on Ethereum Smart-Contracts and Ethereum Virtual Machine, I came to the conclusion that the foundation of Ethereum were not strong enough to be a sustainable long term and that spending time on it was a waste of time. We will surely see alternative languages that will take over Ethereum for the smart-contract platforms.
 
 We also recommend you to read @msuiche blogpost from December 2017 on the [future of smart-contract languages](https://blog.comae.io/smart-contract-languages-development-to-follow-992e30774b39).
 
